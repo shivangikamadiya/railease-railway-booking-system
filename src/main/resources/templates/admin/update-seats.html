@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+    <title layout:fragment="title">Update Train</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+    <div class="page-header">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-edit me-2 text-primary"></i>
+            Update Train
+        </h4>
+        <a th:href="@{/admin/trains}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Trains
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form th:action="@{/admin/trains/update/{id}(id=${trainDTO.id})}"
+                  th:object="${trainDTO}" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Train Name *</label>
+                        <input type="text" class="form-control" th:field="*{trainName}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('trainName')}"
+                             th:errors="*{trainName}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Ticket Price (₹) *</label>
+                        <input type="number" step="0.01" class="form-control" th:field="*{ticketPrice}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('ticketPrice')}"
+                             th:errors="*{ticketPrice}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Source Station *</label>
+                        <input type="text" class="form-control" th:field="*{source}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('source')}"
+                             th:errors="*{source}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Destination Station *</label>
+                        <input type="text" class="form-control" th:field="*{destination}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('destination')}"
+                             th:errors="*{destination}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Departure Time *</label>
+                        <input type="time" class="form-control" th:field="*{departureTime}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('departureTime')}"
+                             th:errors="*{departureTime}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Arrival Time *</label>
+                        <input type="time" class="form-control" th:field="*{arrivalTime}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('arrivalTime')}"
+                             th:errors="*{arrivalTime}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Travel Date *</label>
+                        <input type="date" class="form-control" th:field="*{travelDate}"
+                               th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('travelDate')}"
+                             th:errors="*{travelDate}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Available Seats *</label>
+                        <input type="number" class="form-control" th:field="*{availableSeats}"
+                               min="0" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('availableSeats')}"
+                             th:errors="*{availableSeats}"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" th:field="*{isActive}" id="isActive">
+                    <label class="form-check-label" for="isActive">Active (available for booking)</label>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Train
+                    </button>
+                    <a th:href="@{/admin/trains}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

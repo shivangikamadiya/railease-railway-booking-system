@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Order Meal - RailEase E-Pantry</title>
+    <style>
+        .meal-card {
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-5px);
+            border-color: #4361ee;
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1);
+        }
+
+        .meal-card.selected {
+            border-color: #4361ee;
+            background: linear-gradient(135deg, #4361ee10, #3a0ca310);
+        }
+
+        .meal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .badge-veg { background: #e8f5e9; color: #2e7d32; }
+        .badge-nonveg { background: #ffebee; color: #c62828; }
+        .badge-beverage { background: #e3f2fd; color: #1565c0; }
+
+        .meal-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .meal-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4361ee;
+            margin-bottom: 10px;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .quantity-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px solid #4361ee;
+            background: white;
+            color: #4361ee;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: #4361ee;
+            color: white;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 5px;
+            font-weight: 600;
+        }
+
+        .order-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 16px;
+            padding: 25px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .order-total {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4361ee;
+        }
+
+        .place-order-btn {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            width: 100%;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .place-order-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        }
+
+        .station-select {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="fw-bold"><i class="bi bi-cup-hot-fill me-2 text-primary"></i>E-Pantry</h4>
+                        <p class="text-muted">Delicious meals delivered to your seat</p>
+                    </div>
+                    <span class="badge bg-primary p-2" th:text="'Ticket: ' + ${ticket.ticketId}">Ticket: TK123456</span>
+                </div>
+
+                <!-- Train Info -->
+                <div class="alert alert-info mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Train</small>
+                            <span class="fw-bold" th:text="${ticket.train.trainName} + ' (' + ${ticket.train.trainNo} + ')'">Rajdhani Express (12301)</span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Journey Date</small>
+                            <span th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Jan 2026</span>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Passenger</small>
+                            <span th:text="${ticket.passengerName}">John Doe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meal Grid -->
+                <form th:action="@{/meal/place-order}" method="post" id="mealOrderForm">
+                    <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                    <input type="hidden" name="mealId" id="selectedMealId" value="">
+                    <input type="hidden" name="quantity" id="selectedQuantity" value="1">
+                    <input type="hidden" name="deliveryStation" id="selectedStation" value="">
+                    <input type="hidden" name="instructions" id="specialInstructions" value="">
+
+                    <div class="row g-4">
+                        <div th:each="meal : ${meals}" class="col-md-6">
+                            <div class="meal-card" th:attr="data-id=${meal.mealId}, data-name=${meal.mealName}, data-price=${meal.price}, data-type=${meal.mealType}" onclick="selectMeal(this)">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <span class="meal-badge" th:classappend="${meal.mealType == 'VEG' ? 'badge-veg' : (meal.mealType == 'NON_VEG' ? 'badge-nonveg' : 'badge-beverage')}">
+                                        <span th:text="${meal.mealType}">VEG</span>
+                                    </span>
+                                    <span class="text-primary" th:if="${meal.isAvailable}">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                </div>
+                                <h5 class="meal-name" th:text="${meal.mealName}">Veg Biryani</h5>
+                                <p class="text-muted small" th:text="${meal.description}">Delicious veg biryani</p>
+                                <div class="meal-price">₹<span th:text="${meal.price}">250</span></div>
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="selectMealAndContinue(this)">
+                                    <i class="bi bi-plus-circle me-2"></i>Select
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="col-lg-4">
+                <div class="order-summary">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-bag-check me-2 text-primary"></i>Your Order</h6>
+
+                    <!-- Selected Meal Display -->
+                    <div id="selectedMealDisplay" class="text-center py-4" style="display: none;">
+                        <div class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                        </div>
+                        <h5 id="displayMealName">Veg Biryani</h5>
+                        <p class="text-muted" id="displayMealPrice">₹250</p>
+                    </div>
+
+                    <!-- No Selection Message -->
+                    <div id="noSelectionDisplay" class="text-center py-4">
+                        <i class="bi bi-egg-fried fs-1 text-muted mb-3"></i>
+                        <p class="text-muted">Select a meal to continue</p>
+                    </div>
+
+                    <!-- Quantity Control -->
+                    <div class="quantity-control justify-content-center" id="quantityControl" style="display: none;">
+                        <button type="button" class="quantity-btn" onclick="decreaseQuantity()">-</button>
+                        <input type="number" class="quantity-input" id="quantity" value="1" min="1" max="10" readonly>
+                        <button type="button" class="quantity-btn" onclick="increaseQuantity()">+</button>
+                    </div>
+
+                    <!-- Delivery Station -->
+                    <div class="station-select" id="stationSelect" style="display: none;">
+                        <label class="form-label fw-semibold">Delivery Station</label>
+                        <select class="form-select" id="deliveryStation" onchange="updateSelectedStation()">
+                            <option value="">Select station</option>
+                            <option th:each="station : ${stations}" th:value="${station}" th:text="${station}">Mumbai</option>
+                        </select>
+                    </div>
+
+                    <!-- Special Instructions -->
+                    <div class="mt-3" id="instructionsField" style="display: none;">
+                        <label class="form-label fw-semibold">Special Instructions (Optional)</label>
+                        <textarea class="form-control" id="instructions" rows="2" placeholder="Any special requests?"></textarea>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="mt-4" id="priceBreakdown" style="display: none;">
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Item Total</span>
+                            <span id="itemTotal">₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>GST (5%)</span>
+                            <span id="gstAmount">₹0</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>Total Amount</span>
+                            <span class="order-total" id="totalAmount">₹0</span>
+                        </div>
+                    </div>
+
+                    <!-- Place Order Button -->
+                    <button type="button" class="place-order-btn mt-4" id="placeOrderBtn" onclick="placeOrder()" disabled>
+                        <i class="bi bi-check-circle me-2"></i>Place Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedMeal = null;
+    let currentQuantity = 1;
+    const GST_RATE = 0.05;
+
+    function selectMeal(element) {
+        // Remove selected class from all meals
+        document.querySelectorAll('.meal-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Add selected class to clicked meal
+        element.classList.add('selected');
+
+        // Get meal details
+        selectedMeal = {
+            id: element.getAttribute('data-id'),
+            name: element.getAttribute('data-name'),
+            price: parseFloat(element.getAttribute('data-price'))
+        };
+
+        // Update display
+        updateOrderDisplay();
+    }
+
+    function selectMealAndContinue(button) {
+        selectMeal(button.closest('.meal-card'));
+    }
+
+    function updateOrderDisplay() {
+        if (selectedMeal) {
+            document.getElementById('noSelectionDisplay').style.display = 'none';
+            document.getElementById('selectedMealDisplay').style.display = 'block';
+            document.getElementById('quantityControl').style.display = 'flex';
+            document.getElementById('stationSelect').style.display = 'block';
+            document.getElementById('instructionsField').style.display = 'block';
+            document.getElementById('priceBreakdown').style.display = 'block';
+
+            document.getElementById('displayMealName').textContent = selectedMeal.name;
+            document.getElementById('displayMealPrice').textContent = '₹' + selectedMeal.price.toFixed(2);
+
+            updatePrice();
+        }
+    }
+
+    function increaseQuantity() {
+        let quantity = parseInt(document.getElementById('quantity').value);
+        if (quantity < 10) {
+            quantity++;
+            document.getElementById('quantity').value = quantity;
+            currentQuantity = quantity;
+            updatePrice();
+        }
+    }
+
+    function decreaseQuantity() {
+        let quantity = parseInt(document.getElementById('quantity').value);
+        if (quantity > 1) {
+            quantity--;
+            document.getElementById('quantity').value = quantity;
+            currentQuantity = quantity;
+            updatePrice();
+        }
+    }
+
+    function updatePrice() {
+        if (selectedMeal) {
+            let subtotal = selectedMeal.price * currentQuantity;
+            let gst = subtotal * GST_RATE;
+            let total = subtotal + gst;
+
+            document.getElementById('itemTotal').textContent = '₹' + subtotal.toFixed(2);
+            document.getElementById('gstAmount').textContent = '₹' + gst.toFixed(2);
+            document.getElementById('totalAmount').textContent = '₹' + total.toFixed(2);
+        }
+    }
+
+    function updateSelectedStation() {
+        let station = document.getElementById('deliveryStation').value;
+        let instructions = document.getElementById('instructions').value;
+        document.getElementById('specialInstructions').value = instructions;
+        document.getElementById('placeOrderBtn').disabled = !(selectedMeal && station);
+    }
+
+    function placeOrder() {
+        let station = document.getElementById('deliveryStation').value;
+        let instructions = document.getElementById('instructions').value;
+
+        if (!selectedMeal) {
+            alert('Please select a meal');
+            return;
+        }
+
+        if (!station) {
+            alert('Please select delivery station');
+            return;
+        }
+
+        // Set form values
+        document.getElementById('selectedMealId').value = selectedMeal.id;
+        document.getElementById('selectedQuantity').value = currentQuantity;
+        document.getElementById('selectedStation').value = station;
+        document.getElementById('specialInstructions').value = instructions;
+
+        // Submit form
+        document.getElementById('mealOrderForm').submit();
+    }
+</script>
+</body>
+</html>

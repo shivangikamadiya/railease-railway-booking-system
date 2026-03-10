@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+  <title layout:fragment="title">Cancel Ticket - RailEase</title>
+  <style>
+    .refund-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    .refund-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    .badge-eligible {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .badge-not-eligible {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .amount-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 15px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+    }
+
+    .original-amount {
+        font-size: 24px;
+        color: #6c757d;
+        text-decoration: line-through;
+    }
+
+    .refund-amount {
+        font-size: 36px;
+        font-weight: 700;
+        color: #4361ee;
+    }
+
+    .cancellation-charges {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .policy-item {
+        display: flex;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .policy-item:last-child {
+        border-bottom: none;
+    }
+
+    .policy-icon {
+        width: 40px;
+        height: 40px;
+        background: #e3f2fd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4361ee;
+    }
+
+    .warning-box {
+        background: #fff3e0;
+        border-left: 4px solid #f8961e;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+    }
+
+    .timeline {
+        display: flex;
+        justify-content: space-between;
+        margin: 30px 0;
+        position: relative;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #dee2e6;
+        z-index: 1;
+    }
+
+    .timeline-step {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        flex: 1;
+    }
+
+    .step-dot {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid #dee2e6;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .step-dot.completed {
+        background: #4cc9f0;
+        border-color: #4cc9f0;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 12px;
+        color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+<div layout:fragment="content">
+  <div class="container py-4">
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/user/dashboard}" class="text-decoration-none">Dashboard</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/user/my-bookings}" class="text-decoration-none">My Bookings</a></li>
+            <li class="breadcrumb-item active">Cancel Ticket</li>
+          </ol>
+        </nav>
+
+        <!-- Main Card -->
+        <div class="refund-card">
+          <!-- Status Badge -->
+          <div class="text-center mb-4">
+                        <span class="refund-badge"
+                              th:classappend="${refundEstimate.isEligible} ? 'badge-eligible' : 'badge-not-eligible'">
+                            <i class="bi" th:classappend="${refundEstimate.isEligible} ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'"></i>
+                            <span th:text="${refundEstimate.isEligible} ? 'Eligible for Refund' : 'Not Eligible for Refund'"></span>
+                        </span>
+          </div>
+
+          <!-- Refund Amount Card -->
+          <div class="amount-card text-center mb-4">
+            <div class="mb-2">
+              <span class="original-amount" th:text="'₹' + ${#numbers.formatDecimal(refundEstimate.originalFare, 0, 'COMMA', 2, 'POINT')}">₹2,500</span>
+            </div>
+            <div class="refund-amount" th:text="'₹' + ${#numbers.formatDecimal(refundEstimate.refundAmount, 0, 'COMMA', 2, 'POINT')}">₹2,000</div>
+            <div class="text-muted">Refund Amount (th:text="${refundEstimate.refundPercentage} + '% of fare'")</div>
+            <div class="cancellation-charges mt-2">
+              <i class="bi bi-dash-circle me-1"></i>
+              Cancellation Charges: ₹<span th:text="${#numbers.formatDecimal(refundEstimate.cancellationCharges, 0, 'COMMA', 2, 'POINT')}">500</span>
+            </div>
+          </div>
+
+          <!-- Refund Policy Info -->
+          <div class="warning-box">
+            <div class="d-flex">
+              <i class="bi bi-info-circle-fill fs-4 me-3" style="color: #f8961e;"></i>
+              <div>
+                <h6 class="fw-bold mb-2">Refund Policy</h6>
+                <p class="mb-0 small" th:text="${refundEstimate.refundPolicy}"></p>
+                <p class="mb-0 small text-muted mt-2">
+                  <i class="bi bi-clock me-1"></i>
+                  Estimated refund by: <span th:text="${#temporals.format(refundEstimate.estimatedRefundDate, 'dd MMM yyyy')}"></span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cancellation Form -->
+          <form th:action="@{/cancellation/confirm}" method="post" class="mt-4">
+            <input type="hidden" name="ticketId" th:value="${refundEstimate.ticketId}">
+
+            <!-- Reason for Cancellation -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Reason for Cancellation</label>
+              <select class="form-select" name="reason" required>
+                <option value="">Select a reason...</option>
+                <option value="PLANS_CHANGED">Travel plans changed</option>
+                <option value="DATE_CONFLICT">Date conflict</option>
+                <option value="BOOKED_ANOTHER">Booked another train</option>
+                <option value="EMERGENCY">Emergency/Medical reasons</option>
+                <option value="WEATHER">Weather conditions</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+
+            <!-- Confirmation Checkboxes -->
+            <div class="mb-3">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="confirmPolicy" name="confirmPolicy" required>
+                <label class="form-check-label" for="confirmPolicy">
+                  I understand that cancellation charges of ₹<span th:text="${#numbers.formatDecimal(refundEstimate.cancellationCharges, 0, 'COMMA', 2, 'POINT')}"></span> will be deducted and the remaining amount will be refunded as per policy.
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="confirmFinal" required>
+                <label class="form-check-label" for="confirmFinal">
+                  I confirm that this cancellation is final and cannot be undone.
+                </label>
+              </div>
+            </div>
+
+            <!-- Refund Timeline Preview -->
+            <div class="timeline">
+              <div class="timeline-step">
+                <div class="step-dot completed">
+                  <i class="bi bi-check"></i>
+                </div>
+                <span class="step-label">Request</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-dot">
+                  <i class="bi bi-2"></i>
+                </div>
+                <span class="step-label">Processing</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-dot">
+                  <i class="bi bi-3"></i>
+                </div>
+                <span class="step-label">Approval</span>
+              </div>
+              <div class="timeline-step">
+                <div class="step-dot">
+                  <i class="bi bi-4"></i>
+                </div>
+                <span class="step-label">Refund</span>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+              <a th:href="@{/user/my-bookings}" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-arrow-left me-2"></i>Go Back
+              </a>
+              <button type="submit" class="btn btn-danger btn-lg"
+                      th:disabled="${!refundEstimate.isEligible}">
+                <i class="bi bi-x-circle me-2"></i>Confirm Cancellation
+              </button>
+            </div>
+          </form>
+
+          <!-- Important Notes -->
+          <div class="mt-4 pt-3 border-top">
+            <h6 class="fw-bold mb-3"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Important Notes</h6>
+            <ul class="small text-muted">
+              <li class="mb-2">Refunds are processed to the original payment method</li>
+              <li class="mb-2">It may take 5-7 business days for the refund to reflect in your account</li>
+              <li class="mb-2">Cancellation charges are non-refundable</li>
+              <li class="mb-2">Once cancelled, the ticket cannot be reinstated</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Enable/disable confirm button based on checkboxes
+  document.getElementById('confirmPolicy').addEventListener('change', checkCheckboxes);
+  document.getElementById('confirmFinal').addEventListener('change', checkCheckboxes);
+
+  function checkCheckboxes() {
+      const policyChecked = document.getElementById('confirmPolicy').checked;
+      const finalChecked = document.getElementById('confirmFinal').checked;
+      const submitBtn = document.querySelector('button[type="submit"]');
+
+      submitBtn.disabled = !(policyChecked && finalChecked);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Dashboard - RailEase</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* Modern Dashboard Styles */
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --dark: #1e1b4b;
+        }
+
+        body {
+            background: #f5f7fb;
+        }
+
+        /* Welcome Card */
+        .welcome-card {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border-radius: 24px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(67, 97, 238, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .welcome-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.3);
+            object-fit: cover;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .member-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(67, 97, 238, 0.1);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, #4361ee15, #3a0ca315); color: #4361ee; }
+        .stat-icon.success { background: linear-gradient(135deg, #4cc9f015, #4895ef15); color: #4cc9f0; }
+        .stat-icon.warning { background: linear-gradient(135deg, #f8961e15, #f7258515); color: #f8961e; }
+        .stat-icon.info { background: linear-gradient(135deg, #7209b715, #560bad15); color: #7209b7; }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e1b4b;
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Quick Actions Grid */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(67, 97, 238, 0.1);
+            border-color: #4361ee;
+        }
+
+        .action-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 15px;
+        }
+
+        .action-icon.primary { background: linear-gradient(135deg, #4361ee15, #3a0ca315); color: #4361ee; }
+        .action-icon.success { background: linear-gradient(135deg, #4cc9f015, #4895ef15); color: #4cc9f0; }
+        .action-icon.warning { background: linear-gradient(135deg, #f8961e15, #f7258515); color: #f8961e; }
+        .action-icon.info { background: linear-gradient(135deg, #7209b715, #560bad15); color: #7209b7; }
+
+        .action-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .action-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        /* E-Pantry Section */
+        .pantry-section {
+            background: white;
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e1b4b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #4361ee;
+            font-size: 24px;
+        }
+
+        .meal-slider {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .meal-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1);
+            border-color: #4361ee;
+        }
+
+        .meal-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .badge-veg { background: #e8f5e9; color: #2e7d32; }
+        .badge-nonveg { background: #ffebee; color: #c62828; }
+        .badge-beverage { background: #e3f2fd; color: #1565c0; }
+
+        .meal-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .meal-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4361ee;
+            margin-bottom: 10px;
+        }
+
+        .order-btn {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .order-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        /* Bookings Table */
+        .bookings-section {
+            background: white;
+            border-radius: 24px;
+            padding: 25px;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            border-top: none;
+            border-bottom: 2px solid #4361ee;
+            color: #4361ee;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-confirmed { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #ffebee; color: #c62828; }
+        .status-completed { background: #e3f2fd; color: #1565c0; }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.view { background: #e3f2fd; color: #1565c0; }
+        .action-btn.download { background: #e8f5e9; color: #2e7d32; }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #dee2e6;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid, .quick-actions-grid, .meal-slider {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid py-4">
+
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div th:if="${activeUser.profilePhotoBase64 != null}">
+                        <img th:src="'data:image/jpeg;base64,' + ${activeUser.profilePhotoBase64}"
+                             class="welcome-avatar" alt="Profile">
+                    </div>
+                    <div th:unless="${activeUser.profilePhotoBase64 != null}"
+                         class="welcome-avatar bg-white d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-fill text-primary" style="font-size: 40px;"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <h2 class="fw-bold mb-2" th:text="'Welcome back, ' + ${activeUser.fullName} + '!'">
+                        Welcome back, John Doe!
+                    </h2>
+                    <div class="d-flex flex-wrap gap-3">
+                        <span><i class="bi bi-envelope me-2"></i><span th:text="${activeUser.email}">john@example.com</span></span>
+                        <span><i class="bi bi-telephone me-2"></i><span th:text="${activeUser.mobileNumber ?: 'Not provided'}">9876543210</span></span>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <span class="member-badge">
+                        <i class="bi bi-star-fill me-2"></i>Premium Member
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i class="bi bi-ticket-perforated"></i>
+                </div>
+                <div class="stat-value" th:text="${totalBookings != null ? totalBookings : 0}">0</div>
+                <div class="stat-label">Total Bookings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-value" th:text="${upcomingJourneys != null ? upcomingJourneys : 0}">0</div>
+                <div class="stat-label">Upcoming Journeys</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning">
+                    <i class="bi bi-egg-fried"></i>
+                </div>
+                <div class="stat-value" th:text="${totalMealOrders != null ? totalMealOrders : 0}">0</div>
+                <div class="stat-label">Meal Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon info">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <div class="stat-value" th:text="'₹' + ${#numbers.formatDecimal(totalSpent != null ? totalSpent : 0, 0, 'COMMA', 0, 'POINT')}">₹0</div>
+                <div class="stat-label">Total Spent</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-grid">
+            <a th:href="@{/user/view-trains}" class="action-card">
+                <div class="action-icon primary">
+                    <i class="bi bi-train-front"></i>
+                </div>
+                <div class="action-title">Book Ticket</div>
+                <div class="action-desc">Start your journey</div>
+            </a>
+            <a th:href="@{/user/my-bookings}" class="action-card">
+                <div class="action-icon success">
+                    <i class="bi bi-ticket-detailed"></i>
+                </div>
+                <div class="action-title">My Bookings</div>
+                <div class="action-desc">View your tickets</div>
+            </a>
+            <a th:href="@{/user/meal-menu}" class="action-card">
+                <div class="action-icon warning">
+                    <i class="bi bi-cup-hot"></i>
+                </div>
+                <div class="action-title">E-Pantry</div>
+                <div class="action-desc">Order food on board</div>
+            </a>
+            <a th:href="@{/user/profile}" class="action-card">
+                <div class="action-icon info">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="action-title">My Profile</div>
+                <div class="action-desc">Manage your account</div>
+            </a>
+        </div>
+
+        <!-- E-Pantry Section -->
+        <div class="pantry-section" th:if="${not #lists.isEmpty(featuredMeals)}">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-cup-hot-fill"></i>
+                    <span>E-Pantry - Popular Meals</span>
+                </div>
+                <a th:href="@{/user/meal-menu}" class="text-decoration-none" style="color: #4361ee;">
+                    View All <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="meal-slider">
+                <div class="meal-card" th:each="meal : ${featuredMeals}">
+                    <span class="meal-badge"
+                          th:classappend="${meal.mealType == 'VEG' ? 'badge-veg' :
+                                           (meal.mealType == 'NON_VEG' ? 'badge-nonveg' : 'badge-beverage')}">
+                        <span th:text="${meal.mealType}">VEG</span>
+                    </span>
+                    <h6 class="meal-name" th:text="${meal.mealName}">Veg Biryani</h6>
+                    <div class="meal-price">₹<span th:text="${meal.price}">250</span></div>
+                    <p class="small text-muted mb-2" th:text="${meal.description}">Description</p>
+                    <button class="order-btn" th:onclick="'orderMeal(' + ${meal.mealId} + ')'">
+                        <i class="bi bi-plus-circle me-1"></i>Order Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="bookings-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Recent Bookings</span>
+                </div>
+                <a th:href="@{/user/my-bookings}" class="text-decoration-none" style="color: #4361ee;">
+                    View All <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(recentBookings)}" class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Train</th>
+                        <th>Journey Date</th>
+                        <th>Passenger</th>
+                        <th>Class</th>
+                        <th>Seats</th>
+                        <th>Fare</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="ticket : ${recentBookings}">
+                        <td><span class="fw-semibold" th:text="${ticket.ticketId}">TK123456</span></td>
+                        <td>
+                            <span th:text="${ticket.train.trainName}">Rajdhani</span>
+                            <br><small class="text-muted" th:text="'(' + ${ticket.train.trainNo} + ')'">(12301)</small>
+                        </td>
+                        <td th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Feb 2026</td>
+                        <td th:text="${ticket.passengerName}">John Doe</td>
+                        <td><span class="badge bg-light" th:text="${ticket.classType}">AC</span></td>
+                        <td th:text="${ticket.numberOfSeats}">2</td>
+                        <td><span class="fw-bold text-primary">₹<span th:text="${ticket.totalFare}">2500</span></span></td>
+                        <td>
+                                <span class="status-badge"
+                                      th:classappend="${ticket.ticketStatus.name() == 'CONFIRMED' ? 'status-confirmed' :
+                                                       (ticket.ticketStatus.name() == 'CANCELLED' ? 'status-cancelled' : 'status-completed')}">
+                                    <span th:text="${ticket.ticketStatus.name()}">CONFIRMED</span>
+                                </span>
+                        </td>
+                        <td>
+                            <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}"
+                               class="action-btn view" title="View Ticket">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED'}"
+                               th:href="@{/user/cancel-ticket/{id}(id=${ticket.ticketId})}"
+                               class="action-btn cancel" title="Cancel Ticket" style="background: #ffebee; color: #c62828;">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${#lists.isEmpty(recentBookings)}" class="empty-state">
+                <i class="bi bi-ticket"></i>
+                <h6>No Bookings Yet</h6>
+                <p class="text-muted">Start your journey by booking a train ticket</p>
+                <a th:href="@{/user/view-trains}" class="btn btn-primary">
+                    <i class="bi bi-train-front me-2"></i>Browse Trains
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Selection Modal -->
+<div class="modal fade" id="bookingSelectModal" tabindex="-1" aria-labelledby="bookingSelectModalLabel" aria-hidden="true" th:if="${not #lists.isEmpty(activeTickets)}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookingSelectModalLabel">Select Booking for Meal Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Please select a booking to order your meal:</p>
+                <div class="list-group">
+                    <a href="#" th:each="ticket : ${activeTickets}" 
+                       th:onclick="'selectBooking(\'' + ${ticket.ticketId} + '\')'"
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1" th:text="${ticket.train.trainName}">Train Name</h6>
+                            <small th:text="${ticket.ticketId}">TK123456</small>
+                        </div>
+                        <p class="mb-1">
+                            <span th:text="${ticket.sourceStation}">Source</span> → 
+                            <span th:text="${ticket.destinationStation}">Destination</span>
+                        </p>
+                        <small th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">Journey Date</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function orderMeal(mealId) {
+        // Check if user has active bookings first
+        var activeTicketsCount = /*[[${activeTickets != null ? activeTickets.size() : 0}]]*/ 0;
+        
+        if (activeTicketsCount === 0) {
+            alert('You need an active booking to order meals. Please book a ticket first.');
+            window.location.href = '/user/view-trains';
+            return;
+        }
+        
+        // If only one active booking, go directly to meal order
+        if (activeTicketsCount === 1) {
+            var ticketId = /*[[${activeTickets != null and not #lists.isEmpty(activeTickets) ? activeTickets[0].ticketId : ''}]]*/ '';
+            if (ticketId) {
+                window.location.href = '/user/meal-order/' + ticketId;
+            } else {
+                window.location.href = '/user/meal-menu';
+            }
+            return;
+        }
+        
+        // Show modal to select booking if multiple active bookings exist
+        var modal = new bootstrap.Modal(document.getElementById('bookingSelectModal'));
+        modal.show();
+    }
+    
+    function selectBooking(ticketId) {
+        window.location.href = '/user/meal-order/' + ticketId;
+    }
+</script>
+</body>
+</html>

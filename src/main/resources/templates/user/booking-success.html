@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Booking Success</title>
+    <style>
+        .success-icon {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .ticket-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ticket-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+        
+        .download-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card text-center border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <!-- Success Icon -->
+                        <div class="mb-4 success-icon">
+                            <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex p-4">
+                                <i class="fas fa-check-circle fa-5x text-success"></i>
+                            </div>
+                        </div>
+
+                        <h2 class="fw-bold mb-3 text-success">Booking Confirmed!</h2>
+                        <p class="text-muted mb-4">Your ticket has been successfully booked. A confirmation email has been sent to your registered email address.</p>
+
+                        <!-- Ticket Details Card -->
+                        <div class="card bg-light mb-4" th:if="${ticket}">
+                            <div class="card-body text-start">
+                                <h5 class="card-title fw-bold mb-3">
+                                    <i class="fas fa-ticket-alt me-2 text-primary"></i>Ticket Details
+                                </h5>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Ticket ID:</div>
+                                    <div class="col-7 fw-bold text-primary" th:text="${ticket.ticketId}">TK123456</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Train:</div>
+                                    <div class="col-7 fw-bold" th:text="${trainName}">Rajdhani Express</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Journey Date:</div>
+                                    <div class="col-7" th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Jan 2026</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Route:</div>
+                                    <div class="col-7" th:text="${ticket.sourceStation} + ' → ' + ${ticket.destinationStation}">Mumbai → Delhi</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Passenger:</div>
+                                    <div class="col-7" th:text="${ticket.passengerName}">John Doe</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Class:</div>
+                                    <div class="col-7" th:text="${ticket.classType}">AC</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Seats:</div>
+                                    <div class="col-7" th:text="${ticket.numberOfSeats}">2</div>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-5 text-muted">Total Fare:</div>
+                                    <div class="col-7 fw-bold text-success">₹<span th:text="${ticket.totalFare}">2500</span></div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-5 text-muted">Payment ID:</div>
+                                    <div class="col-7" th:text="${ticket.paymentId}">PAY123456</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a th:href="@{/booking/download-pdf/{ticketId}(ticketId=${ticket.ticketId})}" 
+                               class="btn download-btn" target="_blank">
+                                <i class="fas fa-file-pdf me-2"></i>Download PDF Ticket
+                            </a>
+                            <a th:href="@{/user/my-bookings}" class="btn btn-primary">
+                                <i class="fas fa-ticket-alt me-2"></i>View My Bookings
+                            </a>
+                            <a th:href="@{/user/view-trains}" class="btn btn-outline-primary">
+                                <i class="fas fa-train me-2"></i>Book Another
+                            </a>
+                        </div>
+
+                        <div class="mt-4">
+                            <a th:href="@{/user/dashboard}" class="text-muted text-decoration-none">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

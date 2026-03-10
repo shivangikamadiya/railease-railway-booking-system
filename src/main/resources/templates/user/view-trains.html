@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">View Trains</title>
+    <link rel="stylesheet" th:href="@{/webjars/datatables/1.13.6/css/dataTables.bootstrap5.min.css}">
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0"><i class="fas fa-search me-2 text-primary"></i>Search Trains</h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/user/search-trains}" method="get" class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">From</label>
+                                <input type="text" class="form-control" name="source"
+                                       th:value="${param.source}" placeholder="Source Station" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">To</label>
+                                <input type="text" class="form-control" name="destination"
+                                       th:value="${param.destination}" placeholder="Destination Station" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Journey Date</label>
+                                <input type="date" class="form-control" name="journeyDate"
+                                       th:value="${param.journeyDate}"
+                                       th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-2"></i>Search Trains
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-train me-2 text-primary"></i>
+                            <span th:if="${#lists.isEmpty(trains)}">Available Trains</span>
+                            <span th:unless="${#lists.isEmpty(trains)}">Search Results (Found <span th:text="${trains.size()}"></span> trains)</span>
+                        </h5>
+                        <a th:href="@{/user/view-trains}" class="btn btn-sm btn-outline-secondary" th:if="${param.source != null}">
+                            <i class="fas fa-times me-1"></i>Clear Search
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(trains)}" class="text-center py-5">
+                            <i class="fas fa-train fa-4x text-muted mb-3"></i>
+                            <h5>No trains available</h5>
+                            <p class="text-muted">Try searching with different stations or date</p>
+                        </div>
+                        <div th:unless="${#lists.isEmpty(trains)}" class="table-responsive">
+                            <table class="table table-hover datatable">
+                                <thead>
+                                <tr>
+                                    <th>Train No.</th>
+                                    <th>Train Name</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Departure</th>
+                                    <th>Arrival</th>
+                                    <th>Available Seats</th>
+                                    <th>Price</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="train : ${trains}">
+                                    <td><span class="fw-bold" th:text="${train.trainNo}">12301</span></td>
+                                    <td th:text="${train.trainName}">Rajdhani Express</td>
+                                    <td th:text="${train.source}">Mumbai</td>
+                                    <td th:text="${train.destination}">Delhi</td>
+                                    <td th:text="${train.departureTime}">16:35</td>
+                                    <td th:text="${train.arrivalTime}">08:30</td>
+                                    <td>
+                                        <span class="badge bg-info" th:text="${train.availableSeats}">120</span>
+                                    </td>
+                                    <td>₹<span th:text="${train.ticketPrice}">2500</span></td>
+                                    <td>
+                                        <a th:href="@{/user/train-details/{id}(id=${train.trainNo}, journeyDate=${param.journeyDate})}"
+                                           class="btn btn-sm btn-outline-info mb-1 w-100">
+                                            <i class="fas fa-eye"></i> Details
+                                        </a>
+                                        <a th:href="@{/user/book/{id}(id=${train.trainNo}, classType='AC', journeyDate=${param.journeyDate})}"
+                                           class="btn btn-sm btn-success w-100">
+                                            <i class="fas fa-ticket-alt"></i> Book
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script th:src="@{/webjars/datatables/1.13.6/js/jquery.dataTables.min.js}"></script>
+    <script th:src="@{/webjars/datatables/1.13.6/js/dataTables.bootstrap5.min.js}"></script>
+    <script>
+        $(document).ready(function() {
+            $('.datatable').DataTable({
+                pageLength: 10,
+                order: [[0, 'asc']],
+                language: {
+                    search: "Search trains:",
+                    lengthMenu: "Show _MENU_ trains per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ trains"
+                }
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Ticket Details - RailEase</title>
+    <style>
+        .ticket-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .ticket {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .ticket-header {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .ticket-header::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(135deg, transparent 50%, white 50%);
+        }
+
+        .ticket-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .ticket-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .ticket-body {
+            padding: 40px 30px 30px;
+        }
+
+        .train-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .train-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e1b4b;
+        }
+
+        .train-number {
+            color: #6c757d;
+        }
+
+        .journey-route {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .route-point {
+            text-align: center;
+            flex: 1;
+        }
+
+        .route-time {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4361ee;
+        }
+
+        .route-station {
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .route-date {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .route-line {
+            flex: 2;
+            height: 2px;
+            background: linear-gradient(90deg, #4361ee, #3a0ca3);
+            position: relative;
+            margin: 0 10px;
+        }
+
+        .route-line i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 5px;
+            color: #4361ee;
+            font-size: 20px;
+        }
+
+        .passenger-details {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .detail-item {
+            padding: 10px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e1b4b;
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 20px;
+            border-top: 2px dashed #dee2e6;
+        }
+
+        .qr-placeholder {
+            width: 150px;
+            height: 150px;
+            background: #f8f9fa;
+            margin: 0 auto;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .print-btn {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="ticket-container">
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between mb-4">
+                <a th:href="@{/user/my-bookings}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Bookings
+                </a>
+                <div>
+                    <a th:href="@{/booking/download/{id}(id=${ticket.ticketId})}" class="btn btn-primary me-2">
+                        <i class="bi bi-download me-2"></i>Download
+                    </a>
+                    <button onclick="window.print()" class="btn btn-outline-primary">
+                        <i class="bi bi-printer me-2"></i>Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ticket -->
+            <div class="ticket">
+                <div class="ticket-header">
+                    <div class="ticket-title">RAIL E-TICKET</div>
+                    <div class="ticket-subtitle">PNR: <span th:text="${ticket.ticketId}">TK2026022299971000</span></div>
+                </div>
+
+                <div class="ticket-body">
+                    <!-- Train Info -->
+                    <div class="train-info">
+                        <div class="train-name" th:text="${ticket.train.trainName}">Rajdhani Express</div>
+                        <div class="train-number" th:text="'Train No: ' + ${ticket.train.trainNo}">Train No: 12301</div>
+                    </div>
+
+                    <!-- Journey Route -->
+                    <div class="journey-route">
+                        <div class="route-point">
+                            <div class="route-time" th:text="${ticket.train.departureTime}">16:35</div>
+                            <div class="route-station" th:text="${ticket.sourceStation}">Mumbai</div>
+                            <div class="route-date" th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Jan 2026</div>
+                        </div>
+                        <div class="route-line">
+                            <i class="bi bi-train-front"></i>
+                        </div>
+                        <div class="route-point">
+                            <div class="route-time" th:text="${ticket.train.arrivalTime}">08:30</div>
+                            <div class="route-station" th:text="${ticket.destinationStation}">Delhi</div>
+                            <div class="route-date" th:text="${#temporals.format(ticket.journeyDate.plusDays(1), 'dd MMM yyyy')}">16 Jan 2026</div>
+                        </div>
+                    </div>
+
+                    <!-- Passenger Details -->
+                    <div class="passenger-details">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-person me-2"></i>Passenger Information</h6>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Passenger Name</div>
+                                <div class="detail-value" th:text="${ticket.passengerName}">John Doe</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Age/Gender</div>
+                                <div class="detail-value" th:text="${ticket.passengerAge} + '/' + ${ticket.passengerGender}">30/MALE</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Class</div>
+                                <div class="detail-value" th:text="${ticket.classType}">AC</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Seats</div>
+                                <div class="detail-value" th:text="${ticket.numberOfSeats}">2</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Booking Date</div>
+                                <div class="detail-value" th:text="${#temporals.format(ticket.bookingDate, 'dd MMM yyyy')}">10 Jan 2026</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status</div>
+                                <div class="detail-value">
+                                    <span class="badge bg-success" th:text="${ticket.ticketStatus.name()}">CONFIRMED</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fare Details -->
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Base Fare</td>
+                                    <td class="text-end">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare * 0.95238, 0, 'COMMA', 2, 'POINT')}">2380.95</span></td>
+                                </tr>
+                                <tr>
+                                    <td>GST (5%)</td>
+                                    <td class="text-end">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare * 0.04762, 0, 'COMMA', 2, 'POINT')}">119.05</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Total Fare</td>
+                                    <td class="text-end fw-bold text-primary">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="mb-1"><small class="text-muted">Payment ID</small></p>
+                            <p class="fw-semibold" th:text="${ticket.paymentId}">PAY123456</p>
+                            <p class="mb-1"><small class="text-muted">Payment Method</small></p>
+                            <p class="fw-semibold" th:text="${ticket.paymentMethod}">Credit Card</p>
+                        </div>
+                    </div>
+
+                    <!-- QR Code (Placeholder) -->
+                    <div class="qr-section">
+                        <div class="qr-placeholder">
+                            <i class="bi bi-qr-code" style="font-size: 80px; color: #4361ee;"></i>
+                        </div>
+                        <p class="text-muted small mt-2">Scan this QR code at the station entrance</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Notes -->
+            <div class="alert alert-warning mt-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Important:</strong> Please carry a valid ID proof during the journey.
+                This ticket is non-transferable.
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

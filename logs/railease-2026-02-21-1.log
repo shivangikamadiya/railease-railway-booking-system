@@ -1,0 +1,6 @@
+2026-02-21 00:07:52 [WARN ] HikariPool:788 - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m2s610ms873µs200ns).
+2026-02-21 00:34:45 [WARN ] HikariPool:788 - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=16m52s606ms697µs500ns).
+2026-02-21 02:52:48 [WARN ] HikariPool:788 - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2h16m41s233ms682µs400ns).
+2026-02-21 11:07:15 [WARN ] HikariPool:788 - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8h4m35s572ms283µs).
+2026-02-21 11:07:44 [INFO ] HikariDataSource:350 - HikariPool-1 - Shutdown initiated...
+2026-02-21 11:07:44 [INFO ] HikariDataSource:352 - HikariPool-1 - Shutdown completed.

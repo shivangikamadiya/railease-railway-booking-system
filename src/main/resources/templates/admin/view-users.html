@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+  <title layout:fragment="title">View Users</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+  <div class="page-header">
+    <h4 class="fw-bold mb-0">
+      <i class="fas fa-users me-2 text-primary"></i>
+      Registered Users
+    </h4>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover datatable">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Mobile</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="user : ${users}">
+            <td th:text="${user.userId}">1</td>
+            <td th:text="${user.username}">johndoe</td>
+            <td th:text="${user.fullName}">John Doe</td>
+            <td th:text="${user.email}">john@example.com</td>
+            <td th:text="${user.mobileNumber}">9876543210</td>
+            <td>
+                                    <span class="badge" th:classappend="${user.role == 'ADMIN' ? 'bg-warning' : 'bg-info'}">
+                                        <span th:text="${user.role}">CUSTOMER</span>
+                                    </span>
+            </td>
+            <td>
+                                    <span class="badge" th:classappend="${user.isEnabled} ? 'bg-success' : 'bg-danger'">
+                                        <span th:text="${user.isEnabled} ? 'Active' : 'Inactive'"></span>
+                                    </span>
+            </td>
+            <td th:text="${#temporals.format(user.createdAt, 'dd-MM-yyyy')}">01-01-2026</td>
+            <td>
+              <a th:href="@{/admin/users/toggle/{id}(id=${user.userId})}"
+                 class="btn btn-sm"
+                 th:classappend="${user.isEnabled} ? 'btn-warning' : 'btn-success'"
+                 th:title="${user.isEnabled} ? 'Disable User' : 'Enable User'">
+                <i class="fas" th:classappend="${user.isEnabled} ? 'fa-ban' : 'fa-check-circle'"></i>
+              </a>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

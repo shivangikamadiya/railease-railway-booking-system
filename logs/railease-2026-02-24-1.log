@@ -1,0 +1,21 @@
+2026-02-24 23:59:31 [INFO ] DatabaseConnectionTest:55 - Starting DatabaseConnectionTest using Java 21.0.5 on Shivangi with PID 19880 (started by DELL in C:\Users\Shivangi\IdeaProjects\RailEase)
+2026-02-24 23:59:31 [INFO ] DatabaseConnectionTest:55 - Starting DatabaseConnectionTest using Java 21.0.5 on Shivangi with PID 19880 (started by DELL in C:\Users\Shivangi\IdeaProjects\RailEase)
+2026-02-24 23:59:31 [DEBUG] DatabaseConnectionTest:56 - Running with Spring Boot v2.7.13, Spring v5.3.28
+2026-02-24 23:59:31 [DEBUG] DatabaseConnectionTest:56 - Running with Spring Boot v2.7.13, Spring v5.3.28
+2026-02-24 23:59:31 [INFO ] DatabaseConnectionTest:631 - No active profile set, falling back to 1 default profile: "default"
+2026-02-24 23:59:31 [INFO ] DatabaseConnectionTest:631 - No active profile set, falling back to 1 default profile: "default"
+2026-02-24 23:59:32 [DEBUG] GenericWebApplicationContext:629 - Refreshing org.springframework.web.context.support.GenericWebApplicationContext@66ba7e45
+2026-02-24 23:59:36 [INFO ] HikariDataSource:110 - HikariPool-1 - Starting...
+2026-02-24 23:59:37 [INFO ] HikariDataSource:123 - HikariPool-1 - Start completed.
+2026-02-24 23:59:45 [DEBUG] RequestMappingHandlerAdapter:625 - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-02-24 23:59:45 [DEBUG] RequestMappingHandlerMapping:367 - 52 mappings in 'requestMappingHandlerMapping'
+2026-02-24 23:59:46 [DEBUG] SimpleUrlHandlerMapping:188 - Patterns [/, /login, /register] in 'viewControllerHandlerMapping'
+2026-02-24 23:59:51 [DEBUG] SimpleUrlHandlerMapping:188 - Patterns [/webjars/**, /**, /css/**, /js/**, /images/**] in 'resourceHandlerMapping'
+2026-02-24 23:59:51 [DEBUG] ExceptionHandlerExceptionResolver:307 - ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-02-24 23:59:52 [INFO ] DatabaseConnectionTest:61 - Started DatabaseConnectionTest in 21.489 seconds (JVM running for 25.485)
+2026-02-24 23:59:52 [INFO ] DatabaseConnectionTest:61 - Started DatabaseConnectionTest in 21.489 seconds (JVM running for 25.485)
+2026-02-24 23:59:52 [DEBUG] JdbcTemplate:440 - Executing SQL query [SELECT COUNT(*) FROM users]
+2026-02-24 23:59:52 [DEBUG] JdbcTemplate:440 - Executing SQL query [SELECT COUNT(*) FROM trains]
+2026-02-24 23:59:52 [DEBUG] GenericWebApplicationContext:1051 - Closing org.springframework.web.context.support.GenericWebApplicationContext@66ba7e45, started on Tue Feb 24 23:59:32 IST 2026
+2026-02-24 23:59:52 [INFO ] HikariDataSource:350 - HikariPool-1 - Shutdown initiated...
+2026-02-24 23:59:52 [INFO ] HikariDataSource:352 - HikariPool-1 - Shutdown completed.

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Edit Profile</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/user/dashboard}" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/user/profile}" class="text-decoration-none">Profile</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Edit Profile</li>
+                    </ol>
+                </nav>
+
+                <!-- Main Card -->
+                <div class="card shadow">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-user-edit me-2 text-primary"></i>Edit Profile
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Success/Error Messages -->
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <!-- Profile Photo Section -->
+                        <div class="text-center mb-4">
+                            <div class="position-relative d-inline-block">
+                                <div class="rounded-circle border border-3 border-primary p-1"
+                                     style="width: 150px; height: 150px; overflow: hidden;">
+                                    <img th:if="${user.profilePhotoBase64 != null}"
+                                         th:src="'data:image/jpeg;base64,' + ${user.profilePhotoBase64}"
+                                         class="img-fluid rounded-circle" alt="Profile"
+                                         style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div th:unless="${user.profilePhotoBase64 != null}"
+                                         class="bg-light d-flex align-items-center justify-content-center h-100">
+                                        <i class="fas fa-user-circle fa-4x text-muted"></i>
+                                    </div>
+                                </div>
+                                <label for="profilePhoto" class="position-absolute bottom-0 end-0 mb-2 me-2">
+                                    <span class="btn btn-sm btn-primary rounded-circle p-2" style="cursor: pointer;">
+                                        <i class="fas fa-camera"></i>
+                                    </span>
+                                </label>
+                            </div>
+                            <p class="text-muted small mt-2">Click camera icon to change photo</p>
+                        </div>
+
+                        <!-- Edit Profile Form -->
+                        <form th:action="@{/user/update-profile}" method="post" enctype="multipart/form-data">
+                            <!-- Hidden file input -->
+                            <input type="file" id="profilePhoto" name="profilePhoto"
+                                   accept="image/*" style="display: none;"
+                                   onchange="previewImage(this)">
+
+                            <!-- Personal Information -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-user me-2 text-muted"></i>Username
+                                    </label>
+                                    <input type="text" class="form-control bg-light"
+                                           th:value="${user.username}" readonly disabled>
+                                    <small class="text-muted">Username cannot be changed</small>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>Email
+                                    </label>
+                                    <input type="email" class="form-control bg-light"
+                                           th:value="${user.email}" readonly disabled>
+                                    <small class="text-muted">Email cannot be changed</small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fullName" class="form-label fw-bold">
+                                        <i class="fas fa-signature me-2 text-muted"></i>Full Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="fullName"
+                                           name="fullName" th:value="${user.fullName}" required
+                                           placeholder="Enter your full name">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="mobileNumber" class="form-label fw-bold">
+                                        <i class="fas fa-phone me-2 text-muted"></i>Mobile Number
+                                    </label>
+                                    <input type="tel" class="form-control" id="mobileNumber"
+                                           name="mobileNumber" th:value="${user.mobileNumber}"
+                                           placeholder="10 digit mobile number"
+                                           pattern="[0-9]{10}" maxlength="10">
+                                </div>
+                            </div>
+
+                            <!-- Additional Profile Fields -->
+                            <div class="card bg-light mb-4">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">
+                                        <i class="fas fa-address-card me-2 text-primary"></i>Additional Information
+                                    </h6>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                                            <input type="date" class="form-control" id="dateOfBirth"
+                                                   name="dateOfBirth" th:value="${user.userProfile?.dateOfBirth}">
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label for="gender" class="form-label">Gender</label>
+                                            <select class="form-select" id="gender" name="gender">
+                                                <option value="">Select Gender</option>
+                                                <option value="MALE" th:selected="${user.userProfile?.gender == 'MALE'}">Male</option>
+                                                <option value="FEMALE" th:selected="${user.userProfile?.gender == 'FEMALE'}">Female</option>
+                                                <option value="OTHER" th:selected="${user.userProfile?.gender == 'OTHER'}">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Address</label>
+                                        <textarea class="form-control" id="address" name="address"
+                                                  rows="2" th:text="${user.userProfile?.address}"></textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <label for="city" class="form-label">City</label>
+                                            <input type="text" class="form-control" id="city"
+                                                   name="city" th:value="${user.userProfile?.city}">
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label for="state" class="form-label">State</label>
+                                            <input type="text" class="form-control" id="state"
+                                                   name="state" th:value="${user.userProfile?.state}">
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label for="pincode" class="form-label">Pincode</label>
+                                            <input type="text" class="form-control" id="pincode"
+                                                   name="pincode" th:value="${user.userProfile?.pincode}"
+                                                   pattern="[0-9]{6}" maxlength="6">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="occupation" class="form-label">Occupation</label>
+                                        <input type="text" class="form-control" id="occupation"
+                                               name="occupation" th:value="${user.userProfile?.occupation}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/user/profile}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                    // Update the profile image preview
+                    var imgElement = document.querySelector('.rounded-circle img');
+                    var placeholderElement = document.querySelector('.bg-light');
+
+                    if (imgElement) {
+                        imgElement.src = e.target.result;
+                    } else if (placeholderElement) {
+                        // Replace placeholder with image
+                        var newImg = document.createElement('img');
+                        newImg.className = 'img-fluid rounded-circle';
+                        newImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                        newImg.src = e.target.result;
+
+                        var parentDiv = placeholderElement.parentNode;
+                        parentDiv.removeChild(placeholderElement);
+                        parentDiv.appendChild(newImg);
+                    }
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Validate mobile number
+        document.getElementById('mobileNumber').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Validate pincode
+        document.getElementById('pincode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var mobile = document.getElementById('mobileNumber').value;
+            if (mobile && mobile.length !== 10) {
+                e.preventDefault();
+                alert('Mobile number must be 10 digits');
+                return false;
+            }
+
+            var pincode = document.getElementById('pincode').value;
+            if (pincode && pincode.length !== 6) {
+                e.preventDefault();
+                alert('Pincode must be 6 digits');
+                return false;
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

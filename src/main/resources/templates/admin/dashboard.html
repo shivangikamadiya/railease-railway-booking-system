@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+  <title layout:fragment="title">Admin Dashboard</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+  <div class="page-header">
+    <h4 class="fw-bold mb-0">
+      <i class="fas fa-tachometer-alt me-2 text-primary"></i>
+      Dashboard
+    </h4>
+    <span th:text="${#dates.format(#dates.createNow(), 'dd MMM yyyy')}" class="text-muted"></span>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row">
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-train"></i>
+        </div>
+        <h3 class="fw-bold" th:text="${totalTrains}">0</h3>
+        <p class="text-muted mb-0">Total Trains</p>
+        <small class="text-success" th:text="${activeTrains} + ' active'">0 active</small>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-utensils"></i>
+        </div>
+        <h3 class="fw-bold" th:text="${totalMeals}">0</h3>
+        <p class="text-muted mb-0">Total Meals</p>
+        <small class="text-success" th:text="${availableMeals} + ' available'">0 available</small>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h3 class="fw-bold" th:text="${totalUsers}">0</h3>
+        <p class="text-muted mb-0">Total Users</p>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-undo-alt"></i>
+        </div>
+        <h3 class="fw-bold" th:text="${cancellationStats.totalPending}">0</h3>
+        <p class="text-muted mb-0">Pending Cancellations</p>
+        <small class="text-warning" th:text="'₹' + ${#numbers.formatDecimal(cancellationStats.totalRefundAmount, 0, 'COMMA', 2, 'POINT')} + ' refunds'">₹0 refunds</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Quick Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 mb-2">
+              <a th:href="@{/admin/trains/add}" class="btn btn-outline-primary w-100">
+                <i class="fas fa-plus-circle me-2"></i>Add New Train
+              </a>
+            </div>
+            <div class="col-md-3 mb-2">
+              <a th:href="@{/admin/meals/add}" class="btn btn-outline-success w-100">
+                <i class="fas fa-plus-circle me-2"></i>Add New Meal
+              </a>
+            </div>
+            <div class="col-md-3 mb-2">
+              <a th:href="@{/admin/cancellations}" class="btn btn-outline-warning w-100">
+                <i class="fas fa-undo-alt me-2"></i>View Cancellations
+              </a>
+            </div>
+            <div class="col-md-3 mb-2">
+              <a th:href="@{/admin/users}" class="btn btn-outline-info w-100">
+                <i class="fas fa-users me-2"></i>Manage Users
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Cancellation Requests -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Recent Cancellation Requests</h5>
+          <a th:href="@{/admin/cancellations}" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+              <tr>
+                <th>Type</th>
+                <th>ID</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Requested On</th>
+                <th>Action</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="ticket : ${recentCancellations.ticketRequests}" th:if="${ticketStat.index < 3}">
+                <td><span class="badge bg-primary">Ticket</span></td>
+                <td th:text="${ticket.ticketId}">TK123</td>
+                <td th:text="${ticket.user.fullName}">User</td>
+                <td>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">1000</span></td>
+                <td th:text="${#temporals.format(ticket.cancellationRequestedDate, 'dd MMM HH:mm')}">12 Feb 10:30</td>
+                <td>
+                  <a th:href="@{/admin/cancellations}" class="btn btn-sm btn-primary">Review</a>
+                </td>
+              </tr>
+              <tr th:each="meal : ${recentCancellations.mealRequests}" th:if="${mealStat.index < 3}">
+                <td><span class="badge bg-success">Meal</span></td>
+                <td th:text="${meal.id}">M123</td>
+                <td th:text="${meal.user.fullName}">User</td>
+                <td>₹<span th:text="${#numbers.formatDecimal(meal.totalPrice, 0, 'COMMA', 2, 'POINT')}">500</span></td>
+                <td th:text="${#temporals.format(meal.orderDate, 'dd MMM HH:mm')}">12 Feb 09:15</td>
+                <td>
+                  <a th:href="@{/admin/cancellations}" class="btn btn-sm btn-primary">Review</a>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(recentCancellations.ticketRequests) and #lists.isEmpty(recentCancellations.mealRequests)}">
+                <td colspan="6" class="text-center py-4">
+                  <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                  <p class="text-muted">No pending cancellation requests</p>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Secure Payment - RailEase</title>
+    <style>
+        .payment-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .payment-method-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .payment-method-card:hover {
+            border-color: #4361ee;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1);
+        }
+
+        .payment-method-card.selected {
+            border-color: #4361ee;
+            background: linear-gradient(135deg, #4361ee10, #3a0ca310);
+        }
+
+        .payment-method-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .payment-method-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .payment-method-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .secure-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 25px;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-preview::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .card-chip {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card-number-display {
+            font-size: 22px;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .card-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .payment-form {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+
+        .form-floating > label {
+            padding-left: 25px;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 10;
+        }
+
+        .payment-btn {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            width: 100%;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .payment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        }
+
+        .payment-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .test-card-info {
+            background: #fff3e0;
+            border-left: 4px solid #f8961e;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .test-card-info ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .test-card-info li {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="payment-container">
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="progress" style="height: 40px; border-radius: 20px;">
+                    <div class="progress-bar bg-success" style="width: 33%; border-radius: 20px 0 0 20px;">
+                        <i class="bi bi-check-circle me-2"></i>Booking
+                    </div>
+                    <div class="progress-bar bg-primary" style="width: 34%;">
+                        <i class="bi bi-credit-card me-2"></i>Payment
+                    </div>
+                    <div class="progress-bar bg-secondary" style="width: 33%; border-radius: 0 20px 20px 0;">
+                        <i class="bi bi-ticket-detailed me-2"></i>Confirmation
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secure Payment Badge -->
+            <div class="text-center mb-4">
+                <span class="secure-badge">
+                    <i class="bi bi-shield-lock-fill me-2"></i>
+                    Secure 256-bit SSL Encrypted Payment
+                </span>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">
+                        <i class="bi bi-receipt me-2 text-primary"></i>Order Summary
+                    </h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Ticket ID</small>
+                            <span class="fw-semibold" th:text="${ticket.ticketId}">TK123456</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Train</small>
+                            <span class="fw-semibold" th:text="${trainName}">Rajdhani Express</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Journey Date</small>
+                            <span th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Jan 2026</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Passenger</small>
+                            <span th:text="${ticket.passengerName}">John Doe</span>
+                        </div>
+                        <div class="col-12">
+                            <hr class="my-2">
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Total Amount</span>
+                        </div>
+                        <div class="col-6 text-end">
+                            <span class="h4 fw-bold text-primary">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Card Info (for demo) -->
+            <div class="test-card-info mb-4">
+                <div class="d-flex">
+                    <i class="bi bi-info-circle-fill fs-4 me-3" style="color: #f8961e;"></i>
+                    <div>
+                        <h6 class="fw-bold mb-2">Test Payment Details (Demo)</h6>
+                        <ul class="small">
+                            <li><strong>Card:</strong> 4111 1111 1111 1111 (Visa) or 5555 5555 5555 4444 (Mastercard)</li>
+                            <li><strong>Name:</strong> Any name (min 3 characters)</li>
+                            <li><strong>Expiry:</strong> Any future date (MM/YY)</li>
+                            <li><strong>CVV:</strong> Any 3 digits</li>
+                            <li><strong>UPI:</strong> any@okhdfcbank, any@okicici</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="payment-form">
+                <form th:action="@{/booking/process-payment}" th:object="${paymentDTO}" method="post" id="paymentForm">
+                    <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                    <input type="hidden" name="amount" th:value="${ticket.totalFare}">
+
+                    <!-- Error Message -->
+                    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span th:text="${session.errorMessage} ?: 'Payment failed. Please try again.'">Payment failed</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <h6 class="fw-bold mb-3">Select Payment Method</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="payment-method-card" onclick="selectPaymentMethod('CARD')" id="method-card">
+                                <div class="payment-method-icon text-primary">
+                                    <i class="bi bi-credit-card"></i>
+                                </div>
+                                <div class="payment-method-name">Card</div>
+                                <div class="payment-method-desc">Credit/Debit Card</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="payment-method-card" onclick="selectPaymentMethod('UPI')" id="method-upi">
+                                <div class="payment-method-icon text-success">
+                                    <i class="bi bi-phone"></i>
+                                </div>
+                                <div class="payment-method-name">UPI</div>
+                                <div class="payment-method-desc">Google Pay, PhonePe, etc.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="payment-method-card" onclick="selectPaymentMethod('NETBANKING')" id="method-nb">
+                                <div class="payment-method-icon text-warning">
+                                    <i class="bi bi-bank"></i>
+                                </div>
+                                <div class="payment-method-name">Net Banking</div>
+                                <div class="payment-method-desc">All major banks</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden radio buttons -->
+                    <input type="radio" name="paymentMethod" id="paymentMethodCard" value="CARD" checked style="display: none;">
+                    <input type="radio" name="paymentMethod" id="paymentMethodUPI" value="UPI" style="display: none;">
+                    <input type="radio" name="paymentMethod" id="paymentMethodNB" value="NETBANKING" style="display: none;">
+
+                    <!-- Card Preview (only for card payment) -->
+                    <div id="cardPreview" class="card-preview mb-4">
+                        <div class="card-chip"></div>
+                        <div class="card-number-display" id="displayCardNumber">**** **** **** ****</div>
+                        <div class="card-details">
+                            <div>
+                                <div class="small opacity-75">Card Holder</div>
+                                <div id="displayCardHolder">YOUR NAME</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="small opacity-75">Expires</div>
+                                <div id="displayExpiry">MM/YY</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Payment Fields -->
+                    <div id="cardFields" class="payment-fields">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-floating position-relative">
+                                    <span class="input-icon"><i class="bi bi-credit-card"></i></span>
+                                    <input type="text" class="form-control ps-5" id="cardNumber"
+                                           name="cardNumber" placeholder="Card Number"
+                                           maxlength="19" oninput="formatCardNumber(this); updateCardPreview()">
+                                    <label for="cardNumber">Card Number</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating position-relative">
+                                    <span class="input-icon"><i class="bi bi-person"></i></span>
+                                    <input type="text" class="form-control ps-5" id="cardHolderName"
+                                           name="cardHolderName" placeholder="Card Holder Name"
+                                           oninput="updateCardPreview()">
+                                    <label for="cardHolderName">Card Holder Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="expiryDate"
+                                           name="expiryDate" placeholder="MM/YY"
+                                           maxlength="5" oninput="formatExpiry(this); updateCardPreview()">
+                                    <label for="expiryDate">Expiry Date (MM/YY)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating position-relative">
+                                    <span class="input-icon"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control ps-5" id="cvv"
+                                           name="cvv" placeholder="CVV"
+                                           maxlength="3" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                    <label for="cvv">CVV</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- UPI Fields -->
+                    <div id="upiFields" class="payment-fields" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-floating position-relative">
+                                    <span class="input-icon"><i class="bi bi-phone"></i></span>
+                                    <input type="text" class="form-control ps-5" id="upiId"
+                                           name="upiId" placeholder="username@okhdfcbank">
+                                    <label for="upiId">UPI ID (e.g., name@okhdfcbank)</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-info py-2">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Open your UPI app to complete payment
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Net Banking Fields -->
+                    <div id="netbankingFields" class="payment-fields" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <select class="form-select" id="bank" name="bank">
+                                        <option value="">Select your bank</option>
+                                        <option value="SBI">State Bank of India</option>
+                                        <option value="HDFC">HDFC Bank</option>
+                                        <option value="ICICI">ICICI Bank</option>
+                                        <option value="AXIS">Axis Bank</option>
+                                        <option value="KOTAK">Kotak Mahindra Bank</option>
+                                        <option value="PNB">Punjab National Bank</option>
+                                        <option value="BOB">Bank of Baroda</option>
+                                        <option value="CANARA">Canara Bank</option>
+                                    </select>
+                                    <label for="bank">Select Bank</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="form-check mt-4 mb-3">
+                        <input class="form-check-input" type="checkbox" id="terms" required>
+                        <label class="form-check-label small" for="terms">
+                            I agree to the <a href="#" class="text-primary">Terms & Conditions</a> and
+                            <a href="#" class="text-primary">Cancellation Policy</a>
+                        </label>
+                    </div>
+
+                    <!-- Pay Button -->
+                    <button type="submit" class="payment-btn" id="payButton" disabled>
+                        <i class="bi bi-lock-fill me-2"></i>
+                        Pay ₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span>
+                    </button>
+                </form>
+
+                <!-- Trust Badges -->
+                <div class="d-flex justify-content-center gap-4 mt-4">
+                    <img src="https://img.icons8.com/color/48/000000/visa.png" alt="Visa" height="30">
+                    <img src="https://img.icons8.com/color/48/000000/mastercard.png" alt="Mastercard" height="30">
+                    <img src="https://img.icons8.com/color/48/000000/rupay.png" alt="RuPay" height="30">
+                    <img src="https://img.icons8.com/color/48/000000/google-pay-india.png" alt="Google Pay" height="30">
+                    <img src="https://img.icons8.com/color/48/000000/phone-pe.png" alt="PhonePe" height="30">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Current selected payment method
+    let currentMethod = 'CARD';
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        selectPaymentMethod('CARD');
+
+        // Enable pay button when terms are checked
+        document.getElementById('terms').addEventListener('change', function() {
+            document.getElementById('payButton').disabled = !this.checked;
+        });
+    });
+
+    function selectPaymentMethod(method) {
+        currentMethod = method;
+
+        // Update radio buttons
+        document.getElementById('paymentMethodCard').checked = (method === 'CARD');
+        document.getElementById('paymentMethodUPI').checked = (method === 'UPI');
+        document.getElementById('paymentMethodNB').checked = (method === 'NETBANKING');
+
+        // Update UI for method cards
+        document.querySelectorAll('.payment-method-card').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        if (method === 'CARD') {
+            document.getElementById('method-card').classList.add('selected');
+            document.getElementById('cardFields').style.display = 'block';
+            document.getElementById('upiFields').style.display = 'none';
+            document.getElementById('netbankingFields').style.display = 'none';
+            document.getElementById('cardPreview').style.display = 'block';
+        } else if (method === 'UPI') {
+            document.getElementById('method-upi').classList.add('selected');
+            document.getElementById('cardFields').style.display = 'none';
+            document.getElementById('upiFields').style.display = 'block';
+            document.getElementById('netbankingFields').style.display = 'none';
+            document.getElementById('cardPreview').style.display = 'none';
+        } else {
+            document.getElementById('method-nb').classList.add('selected');
+            document.getElementById('cardFields').style.display = 'none';
+            document.getElementById('upiFields').style.display = 'none';
+            document.getElementById('netbankingFields').style.display = 'block';
+            document.getElementById('cardPreview').style.display = 'none';
+        }
+    }
+
+    function formatCardNumber(input) {
+        // Remove all non-digits
+        let value = input.value.replace(/\D/g, '');
+
+        // Add space after every 4 digits
+        let formatted = '';
+        for (let i = 0; i < value.length; i++) {
+            if (i > 0 && i % 4 === 0) {
+                formatted += ' ';
+            }
+            formatted += value[i];
+        }
+
+        input.value = formatted;
+    }
+
+    function formatExpiry(input) {
+        let value = input.value.replace(/\D/g, '');
+
+        if (value.length >= 2) {
+            input.value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        } else {
+            input.value = value;
+        }
+    }
+
+    function updateCardPreview() {
+        let cardNumber = document.getElementById('cardNumber').value || '**** **** **** ****';
+        let cardHolder = document.getElementById('cardHolderName').value || 'YOUR NAME';
+        let expiry = document.getElementById('expiryDate').value || 'MM/YY';
+
+        // Format card number for display (show last 4 digits only)
+        let cleanNumber = cardNumber.replace(/\D/g, '');
+        if (cleanNumber.length > 4) {
+            let last4 = cleanNumber.slice(-4);
+            cardNumber = '**** **** **** ' + last4;
+        }
+
+        document.getElementById('displayCardNumber').textContent = cardNumber;
+        document.getElementById('displayCardHolder').textContent = cardHolder.toUpperCase();
+        document.getElementById('displayExpiry').textContent = expiry;
+    }
+
+    // Form validation
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+        let isValid = true;
+        let errorMessage = '';
+
+        if (currentMethod === 'CARD') {
+            let cardNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
+            let cardHolder = document.getElementById('cardHolderName').value;
+            let expiry = document.getElementById('expiryDate').value;
+            let cvv = document.getElementById('cvv').value;
+
+            if (cardNumber.length < 13) {
+                isValid = false;
+                errorMessage = 'Please enter a valid card number';
+            } else if (cardHolder.length < 3) {
+                isValid = false;
+                errorMessage = 'Please enter card holder name';
+            } else if (!expiry.match(/^\d{2}\/\d{2}$/)) {
+                isValid = false;
+                errorMessage = 'Please enter valid expiry date (MM/YY)';
+            } else if (cvv.length < 3) {
+                isValid = false;
+                errorMessage = 'Please enter valid CVV';
+            }
+        } else if (currentMethod === 'UPI') {
+            let upiId = document.getElementById('upiId').value;
+            if (!upiId.includes('@')) {
+                isValid = false;
+                errorMessage = 'Please enter a valid UPI ID';
+            }
+        } else if (currentMethod === 'NETBANKING') {
+            let bank = document.getElementById('bank').value;
+            if (!bank) {
+                isValid = false;
+                errorMessage = 'Please select a bank';
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert(errorMessage);
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Train Details</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-train me-2"></i>Train Details - <span th:text="${train.trainName}"></span></h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">Train Number:</th>
+                                        <td><span class="fw-bold text-primary" th:text="${train.trainNo}">12301</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Train Name:</th>
+                                        <td th:text="${train.trainName}">Rajdhani Express</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Source Station:</th>
+                                        <td th:text="${train.sourceStation}">Mumbai</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Destination Station:</th>
+                                        <td th:text="${train.destinationStation}">Delhi</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">Departure Time:</th>
+                                        <td><span class="fw-bold text-warning" th:text="${train.departureTime}">16:35</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Arrival Time:</th>
+                                        <td><span class="fw-bold text-success" th:text="${train.arrivalTime}">08:30</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Journey Date:</th>
+                                        <td th:text="${selectedDate}">01 Jan 2026</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td>
+                                                <span class="badge" th:classappend="${train.isActive} ? 'bg-success' : 'bg-danger'">
+                                                    <span th:text="${train.isActive} ? 'Active' : 'Inactive'"></span>
+                                                </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold mt-4 mb-3">Seat Availability & Fares</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Total Seats</th>
+                                    <th>Available Seats</th>
+                                    <th>Fare per Seat</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td><span class="fw-bold">AC</span></td>
+                                    <td th:text="${train.acSeats}">120</td>
+                                    <td><span class="badge bg-success" th:text="${train.acSeats}">120</span></td>
+                                    <td>₹<span th:text="${train.acFare}">2500</span></td>
+                                    <td>
+                                        <a th:href="@{/booking/process(trainNo=${train.trainNo}, classType='AC', journeyDate=${selectedDate})}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-ticket-alt me-1"></i>Book
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="fw-bold">Sleeper</span></td>
+                                    <td th:text="${train.sleeperSeats}">180</td>
+                                    <td><span class="badge bg-success" th:text="${train.sleeperSeats}">180</span></td>
+                                    <td>₹<span th:text="${train.sleeperFare}">1200</span></td>
+                                    <td>
+                                        <a th:href="@{/booking/process(trainNo=${train.trainNo}, classType='SLEEPER', journeyDate=${selectedDate})}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-ticket-alt me-1"></i>Book
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="fw-bold">General</span></td>
+                                    <td th:text="${train.generalSeats}">200</td>
+                                    <td><span class="badge bg-success" th:text="${train.generalSeats}">200</span></td>
+                                    <td>₹<span th:text="${train.generalFare}">800</span></td>
+                                    <td>
+                                        <a th:href="@{/booking/process(trainNo=${train.trainNo}, classType='GENERAL', journeyDate=${selectedDate})}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-ticket-alt me-1"></i>Book
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a th:href="@{/user/view-trains}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Trains
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

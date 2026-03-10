@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Payment</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" style="width: 33%">Booking</div>
+                        <div class="progress-bar bg-success" style="width: 33%">Payment</div>
+                        <div class="progress-bar bg-secondary" style="width: 34%">Confirmation</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-credit-card me-2"></i>Payment Details</h4>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Order Summary -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h5 class="fw-bold mb-3">Order Summary</h5>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <p class="mb-1">Ticket ID:</p>
+                                        <p class="mb-1">Train:</p>
+                                        <p class="mb-1">Journey Date:</p>
+                                        <p class="mb-1">Class:</p>
+                                        <p class="mb-1">Seats:</p>
+                                        <p class="mb-1 fw-bold">Total Amount:</p>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <p class="mb-1" th:text="${ticket.ticketId}">TK123456</p>
+                                        <p class="mb-1" th:text="${ticket.train.trainName}">Rajdhani</p>
+                                        <p class="mb-1" th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">15 Jan 2026</p>
+                                        <p class="mb-1" th:text="${ticket.classType}">AC</p>
+                                        <p class="mb-1" th:text="${ticket.numberOfSeats}">2</p>
+                                        <p class="mb-1 fw-bold text-success">₹<span th:text="${ticket.totalFare}">2500</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Form -->
+                        <form th:action="@{/booking/process-payment}" th:object="${paymentDTO}" method="post">
+                            <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                            <input type="hidden" name="amount" th:value="${ticket.totalFare}">
+
+                            <!-- Payment Method Selection -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Select Payment Method</label>
+                                <div class="row">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check card-option p-3 border rounded" onclick="selectPaymentMethod('CARD')">
+                                            <input class="form-check-input" type="radio" name="paymentMethod"
+                                                   id="cardPayment" value="CARD" checked>
+                                            <label class="form-check-label" for="cardPayment">
+                                                <i class="fas fa-credit-card fa-2x mb-2 text-primary"></i><br>
+                                                Credit/Debit Card
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check card-option p-3 border rounded" onclick="selectPaymentMethod('UPI')">
+                                            <input class="form-check-input" type="radio" name="paymentMethod"
+                                                   id="upiPayment" value="UPI">
+                                            <label class="form-check-label" for="upiPayment">
+                                                <i class="fas fa-mobile-alt fa-2x mb-2 text-success"></i><br>
+                                                UPI
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check card-option p-3 border rounded" onclick="selectPaymentMethod('NETBANKING')">
+                                            <input class="form-check-input" type="radio" name="paymentMethod"
+                                                   id="netbankingPayment" value="NETBANKING">
+                                            <label class="form-check-label" for="netbankingPayment">
+                                                <i class="fas fa-university fa-2x mb-2 text-warning"></i><br>
+                                                Net Banking
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Payment Fields -->
+                            <div id="cardFields" class="payment-fields">
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Card Number</label>
+                                        <input type="text" class="form-control" name="cardNumber"
+                                               placeholder="1234 5678 9012 3456" maxlength="19">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Card Holder Name</label>
+                                        <input type="text" class="form-control" name="cardHolderName"
+                                               placeholder="John Doe">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Expiry Date</label>
+                                        <input type="text" class="form-control" name="expiryDate"
+                                               placeholder="MM/YY">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">CVV</label>
+                                        <input type="password" class="form-control" name="cvv"
+                                               placeholder="123" maxlength="3">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- UPI Fields -->
+                            <div id="upiFields" class="payment-fields" style="display:none;">
+                                <div class="mb-3">
+                                    <label class="form-label">UPI ID</label>
+                                    <input type="text" class="form-control" name="upiId"
+                                           placeholder="username@okhdfcbank">
+                                    <small class="text-muted">Enter your UPI ID (e.g., name@okhdfcbank)</small>
+                                </div>
+                            </div>
+
+                            <!-- Net Banking Fields (Simplified) -->
+                            <div id="netbankingFields" class="payment-fields" style="display:none;">
+                                <div class="mb-3">
+                                    <label class="form-label">Select Bank</label>
+                                    <select class="form-select" name="bank">
+                                        <option value="">Select Bank</option>
+                                        <option value="SBI">State Bank of India</option>
+                                        <option value="HDFC">HDFC Bank</option>
+                                        <option value="ICICI">ICICI Bank</option>
+                                        <option value="AXIS">Axis Bank</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a th:href="@{/user/train-details/{id}(id=${ticket.train.trainNo})}"
+                                   class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-lock me-2"></i>Pay ₹<span th:text="${ticket.totalFare}"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        function selectPaymentMethod(method) {
+            // Hide all payment fields
+            document.querySelectorAll('.payment-fields').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            // Show selected payment fields
+            if (method === 'CARD') {
+                document.getElementById('cardFields').style.display = 'block';
+            } else if (method === 'UPI') {
+                document.getElementById('upiFields').style.display = 'block';
+            } else if (method === 'NETBANKING') {
+                document.getElementById('netbankingFields').style.display = 'block';
+            }
+        }
+
+        // Format card number
+        document.querySelector('input[name="cardNumber"]')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formatted += ' ';
+                }
+                formatted += value[i];
+            }
+            e.target.value = formatted;
+        });
+
+        // Format expiry date
+        document.querySelector('input[name="expiryDate"]')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                e.target.value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            } else {
+                e.target.value = value;
+            }
+        });
+    </script>
+
+    <style>
+        .card-option {
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .card-option:hover {
+            background-color: #f8f9fa;
+            border-color: #4a6cf7 !important;
+        }
+        .card-option input[type="radio"]:checked + label {
+            color: #4a6cf7;
+        }
+        .form-check-input:checked {
+            background-color: #4a6cf7;
+            border-color: #4a6cf7;
+        }
+    </style>
+</div>
+</body>
+</html>

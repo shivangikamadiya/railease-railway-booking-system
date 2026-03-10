@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Refund Status - RailEase</title>
+    <style>
+        .status-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-PENDING { background: #fff3e0; }
+        .status-PROCESSING { background: #e3f2fd; }
+        .status-COMPLETED { background: #e8f5e9; }
+        .status-FAILED { background: #ffebee; }
+
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+
+        .timeline-container {
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+            z-index: 1;
+        }
+
+        .timeline-item {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot.completed {
+            background: #4cc9f0;
+            border-color: #4cc9f0;
+            color: white;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-bottom: 20px;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .refund-detail-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/user/dashboard}" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/cancellation/all}" class="text-decoration-none">Refunds</a></li>
+                        <li class="breadcrumb-item active">Refund Status</li>
+                    </ol>
+                </nav>
+
+                <!-- Status Card -->
+                <div class="status-card">
+                    <!-- Status Header -->
+                    <div class="status-header"
+                         th:classappend="'status-' + ${refundStatus.refundStatus}">
+                        <div class="status-icon" th:classappend="'bg-' + ${refundStatus.refundStatus == 'COMPLETED' ? 'success' :
+                                                                              (refundStatus.refundStatus == 'PENDING' ? 'warning' :
+                                                                              (refundStatus.refundStatus == 'PROCESSING' ? 'info' : 'danger'))} + ' bg-opacity-25'">
+                            <i class="bi" th:classappend="${refundStatus.refundStatus == 'COMPLETED' ? 'bi-check-circle-fill text-success' :
+                                                           (refundStatus.refundStatus == 'PENDING' ? 'bi-clock-fill text-warning' :
+                                                           (refundStatus.refundStatus == 'PROCESSING' ? 'bi-arrow-repeat text-info' : 'bi-exclamation-circle-fill text-danger'))}"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1" th:text="${refundStatus.refundStatusMessage}">Refund in Progress</h4>
+                            <p class="mb-0 text-muted">
+                                Ticket: <span th:text="${refundStatus.ticketNumber}">TK2026022299971000</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Amount Summary -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Original Fare</small>
+                                <span class="fs-5 fw-bold">₹<span th:text="${#numbers.formatDecimal(refundStatus.originalFare, 0, 'COMMA', 2, 'POINT')}">2500</span></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <small class="text-muted d-block">Cancellation Charges</small>
+                                <span class="fs-5 fw-bold text-danger">- ₹<span th:text="${#numbers.formatDecimal(refundStatus.cancellationCharges, 0, 'COMMA', 2, 'POINT')}">500</span></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-success bg-opacity-10 rounded-3 text-center">
+                                <small class="text-muted d-block">Refund Amount</small>
+                                <span class="fs-5 fw-bold text-success">₹<span th:text="${#numbers.formatDecimal(refundStatus.refundAmount, 0, 'COMMA', 2, 'POINT')}">2000</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+
+                        <div th:each="step, iterStat : ${refundStatus.timeline}" class="timeline-item">
+                            <div class="timeline-dot" th:classappend="${step.completed} ? 'completed' : ''">
+                                <i class="bi" th:classappend="${step.completed} ? 'bi-check' : (${iterStat.index} + 1)"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-time" th:text="${step.timestamp != null} ? ${#temporals.format(step.timestamp, 'dd MMM yyyy, hh:mm a')} : ''"></div>
+                                <div class="timeline-title" th:text="${step.stage}">Cancellation Requested</div>
+                                <div class="small text-muted" th:text="${step.message}">Your request has been submitted</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refund Details -->
+                    <div class="refund-detail-card">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-receipt me-2"></i>Refund Details</h6>
+
+                        <div class="detail-row">
+                            <span class="text-muted">Refund Status</span>
+                            <span class="fw-semibold" th:text="${refundStatus.refundStatus}">PROCESSING</span>
+                        </div>
+
+                        <div class="detail-row">
+                            <span class="text-muted">Transaction ID</span>
+                            <span class="fw-semibold" th:text="${refundStatus.refundTransactionId ?: 'Not available'}">REF1234567890</span>
+                        </div>
+
+                        <div class="detail-row">
+                            <span class="text-muted">Payment Method</span>
+                            <span class="fw-semibold" th:text="${refundStatus.paymentMethod}">Credit Card</span>
+                        </div>
+
+                        <div class="detail-row">
+                            <span class="text-muted">Refund Method</span>
+                            <span class="fw-semibold" th:text="${refundStatus.refundMethod ?: refundStatus.paymentMethod}">Original Payment Method</span>
+                        </div>
+
+                        <div th:if="${refundStatus.estimatedCompletionDate}" class="detail-row">
+                            <span class="text-muted">Expected by</span>
+                            <span class="fw-semibold" th:text="${#temporals.format(refundStatus.estimatedCompletionDate, 'dd MMM yyyy')}">28 Feb 2026</span>
+                        </div>
+
+                        <div th:if="${refundStatus.actualCompletionDate}" class="detail-row">
+                            <span class="text-muted">Completed on</span>
+                            <span class="fw-semibold" th:text="${#temporals.format(refundStatus.actualCompletionDate, 'dd MMM yyyy, hh:mm a')}">25 Feb 2026, 2:30 PM</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a th:href="@{/user/my-bookings}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Bookings
+                        </a>
+                        <div>
+                            <a th:href="@{/cancellation/all}" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-list me-2"></i>All Refunds
+                            </a>
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="bi bi-printer me-2"></i>Print Receipt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

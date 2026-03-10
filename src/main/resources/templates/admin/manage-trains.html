@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+    <title layout:fragment="title">Manage Trains</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+    <div class="page-header">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-subway me-2 text-primary"></i>
+            Manage Trains
+        </h4>
+        <a th:href="@{/admin/trains/add}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Train
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover datatable">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Train Name</th>
+                        <th>Source</th>
+                        <th>Destination</th>
+                        <th>Departure</th>
+                        <th>Arrival</th>
+                        <th>Travel Date</th>
+                        <th>Seats</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="train : ${trains}">
+                        <td th:text="${train.trainNo}">1</td>
+                        <td th:text="${train.trainName}">Rajdhani Express</td>
+                        <td th:text="${train.source}">Mumbai</td>
+                        <td th:text="${train.destination}">Delhi</td>
+                        <td th:text="${train.departureTime}">16:35</td>
+                        <td th:text="${train.arrivalTime}">08:30</td>
+                        <td th:text="${#temporals.format(train.travelDate, 'dd-MM-yyyy')}">01-01-2026</td>
+                        <td th:text="${train.availableSeats}">120</td>
+                        <td>₹<span th:text="${#numbers.formatDecimal(train.ticketPrice, 0, 'COMMA', 2, 'POINT')}">2500</span></td>
+                        <td>
+                                    <span class="badge" th:classappend="${train.isActive} ? 'bg-success' : 'bg-danger'">
+                                        <span th:text="${train.isActive} ? 'Active' : 'Inactive'"></span>
+                                    </span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a th:href="@{/admin/trains/edit/{id}(id=${train.trainNo})}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a th:href="@{/admin/trains/toggle/{id}(id=${train.trainNo})}"
+                                   class="btn btn-sm"
+                                   th:classappend="${train.isActive} ? 'btn-outline-warning' : 'btn-outline-success'"
+                                   th:title="${train.isActive} ? 'Deactivate' : 'Activate'">
+                                    <i class="fas" th:classappend="${train.isActive} ? 'fa-ban' : 'fa-check-circle'"></i>
+                                </a>
+                                <a th:href="@{/admin/trains/delete/{id}(id=${train.trainNo})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to delete this train?')"
+                                   title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

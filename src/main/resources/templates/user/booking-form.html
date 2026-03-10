@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Book Ticket</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Book Your Ticket</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Train Summary -->
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Train:</strong> <span th:text="${train.trainName} + ' (' + ${train.trainNo} + ')'"></span></p>
+                                    <p class="mb-1"><strong>Route:</strong> <span th:text="${train.sourceStation} + ' → ' + ${train.destinationStation}"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Departure:</strong> <span th:text="${train.departureTime}"></span></p>
+                                    <p class="mb-1"><strong>Arrival:</strong> <span th:text="${train.arrivalTime}"></span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div th:if="${errorMessage}" class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span>
+                        </div>
+
+                        <!-- Booking Form -->
+                        <form th:action="@{/booking/confirm}" method="post">
+                            <input type="hidden" name="trainNo" th:value="${train.trainNo}">
+                            <input type="hidden" name="classType" th:value="${classType}">
+                            <input type="hidden" name="journeyDate" th:value="${journeyDate}">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Passenger Name *</label>
+                                    <input type="text" class="form-control" name="passengerName"
+                                           th:value="${activeUser.fullName}" required>
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-bold">Age *</label>
+                                    <input type="number" class="form-control" name="passengerAge"
+                                           min="1" max="120" required>
+                                </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label fw-bold">Gender *</label>
+                                    <select class="form-select" name="passengerGender" required>
+                                        <option value="">Select</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="FEMALE">Female</option>
+                                        <option value="OTHER">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-bold">Class *</label>
+                                    <select class="form-select" name="classType" id="classType" required onchange="updateFare()">
+                                        <option value="">Select Class</option>
+                                        <option value="AC">AC</option>
+                                        <option value="SLEEPER">Sleeper</option>
+                                        <option value="GENERAL">General</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-bold">Number of Seats *</label>
+                                    <input type="number" class="form-control" name="numberOfSeats"
+                                           id="numberOfSeats" min="1" max="6" value="1" required onchange="updateFare()">
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-bold">Journey Date</label>
+                                    <input type="text" class="form-control" th:value="${journeyDate}" readonly>
+                                </div>
+                            </div>
+
+                            <div class="card bg-light mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Fare Summary</h5>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p class="mb-1">Base Fare:</p>
+                                            <p class="mb-1">GST (5%):</p>
+                                            <p class="mb-1 fw-bold">Total Amount:</p>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            <p class="mb-1" id="baseFare">₹0</p>
+                                            <p class="mb-1" id="gst">₹0</p>
+                                            <p class="mb-1 fw-bold text-success" id="totalFare">₹0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/user/train-details/{id}(id=${train.trainNo})}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Back
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check-circle me-2"></i>Proceed to Payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script th:inline="javascript">
+        var basePrice = 0;
+        
+        function updateFare() {
+            var classType = document.getElementById('classType').value;
+            var seats = document.getElementById('numberOfSeats').value || 1;
+            
+            // Set price based on class type
+            if (classType === 'AC') {
+                basePrice = [[${train.acFare}]] || 1500;
+            } else if (classType === 'SLEEPER') {
+                basePrice = [[${train.sleeperFare}]] || 800;
+            } else {
+                basePrice = [[${train.generalFare}]] || 300;
+            }
+            
+            var baseFare = basePrice * seats;
+            var gst = baseFare * 0.05;
+            var total = baseFare + gst;
+
+            document.getElementById('baseFare').innerText = '₹' + baseFare.toFixed(2);
+            document.getElementById('gst').innerText = '₹' + gst.toFixed(2);
+            document.getElementById('totalFare').innerText = '₹' + total.toFixed(2);
+        }
+
+        // Set default class type from the parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            var classType = [[${classType}]];
+            if (classType) {
+                document.getElementById('classType').value = classType;
+            }
+            updateFare();
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">My Meal Orders - RailEase</title>
+    <style>
+        .order-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4361ee;
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .order-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #fff3e0; color: #f8961e; }
+        .status-confirmed { background: #e8f5e9; color: #2e7d32; }
+        .status-delivered { background: #e3f2fd; color: #1565c0; }
+        .status-cancelled { background: #ffebee; color: #c62828; }
+
+        .order-item {
+            border-bottom: 1px solid #e9ecef;
+            padding: 10px 0;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold"><i class="bi bi-cup-hot-fill me-2 text-primary"></i>My Meal Orders</h4>
+                <p class="text-muted">Track all your E-Pantry orders</p>
+            </div>
+            <a th:href="@{/user/meal-menu}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Order More
+            </a>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Orders List -->
+        <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5">
+            <i class="bi bi-cup-hot fs-1 text-muted mb-3"></i>
+            <h5>No Meal Orders Yet</h5>
+            <p class="text-muted mb-4">You haven't ordered any meals for your journey</p>
+            <a th:href="@{/user/meal-menu}" class="btn btn-primary">
+                <i class="bi bi-egg-fried me-2"></i>Browse E-Pantry
+            </a>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(orders)}">
+            <div th:each="order : ${orders}" class="order-card">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1" th:text="${order.meal.mealName}">Veg Biryani</h5>
+                                <small class="text-muted" th:text="'Order ID: ' + ${order.orderId}">Order ID: 12345</small>
+                            </div>
+                            <span class="order-status" th:classappend="'status-' + ${order.deliveryStatus.toLowerCase()}"
+                                  th:text="${order.deliveryStatus}">PENDING</span>
+                        </div>
+
+                        <div class="order-item">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Quantity</small>
+                                    <span th:text="${order.quantity} + ' item(s)'">2 items</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Total Price</small>
+                                    <span class="fw-bold text-primary">₹<span th:text="${order.totalPrice}">500</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="order-item">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Delivery Station</small>
+                                    <span th:text="${order.deliveryStation}">Mumbai</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Order Date</small>
+                                    <span th:text="${#temporals.format(order.orderDate, 'dd MMM yyyy, hh:mm a')}">15 Jan 2026</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${order.specialInstructions}" class="mt-2 small text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <span th:text="${order.specialInstructions}">Special instructions</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 border-start">
+                        <div class="text-center">
+                            <small class="text-muted d-block mb-2">Ticket Details</small>
+                            <span class="fw-semibold" th:text="${order.ticket.ticketId}">TK123456</span>
+                            <br>
+                            <small class="text-muted" th:text="${order.ticket.train.trainName}">Rajdhani Express</small>
+
+                            <div class="mt-3">
+                                <button th:if="${order.deliveryStatus == 'PENDING'}"
+                                        class="btn btn-sm btn-outline-danger"
+                                        th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel
+                                </button>
+                                <button th:unless="${order.deliveryStatus == 'PENDING'}"
+                                        class="btn btn-sm btn-outline-secondary" disabled>
+                                    <i class="bi bi-check-circle me-1"></i>Completed
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cancelOrder(orderId) {
+        if (confirm('Are you sure you want to cancel this meal order?')) {
+            window.location.href = '/meal/cancel/' + orderId;
+        }
+    }
+</script>
+</body>
+</html>

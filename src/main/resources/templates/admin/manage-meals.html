@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+    <title layout:fragment="title">Manage Meals</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+    <div class="page-header">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-utensils me-2 text-primary"></i>
+            Manage Meals
+        </h4>
+        <a th:href="@{/admin/meals/add}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Meal
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover datatable">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Meal Name</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                        <th>Prep Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="meal : ${meals}">
+                        <td th:text="${meal.id}">1</td>
+                        <td th:text="${meal.mealName}">Veg Biryani</td>
+                        <td th:text="${meal.description}">Delicious veg biryani</td>
+                        <td th:text="${meal.mealType}">VEG</td>
+                        <td>₹<span th:text="${#numbers.formatDecimal(meal.price, 0, 'COMMA', 2, 'POINT')}">250</span></td>
+                        <td th:text="${meal.preparationTime} + ' min'">30 min</td>
+                        <td>
+                                    <span class="badge" th:classappend="${meal.availabilityStatus} ? 'bg-success' : 'bg-danger'">
+                                        <span th:text="${meal.availabilityStatus} ? 'Available' : 'Unavailable'"></span>
+                                    </span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a th:href="@{/admin/meals/edit/{id}(id=${meal.id})}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a th:href="@{/admin/meals/toggle/{id}(id=${meal.id})}"
+                                   class="btn btn-sm"
+                                   th:classappend="${meal.availabilityStatus} ? 'btn-outline-warning' : 'btn-outline-success'"
+                                   th:title="${meal.availabilityStatus} ? 'Mark Unavailable' : 'Mark Available'">
+                                    <i class="fas" th:classappend="${meal.availabilityStatus} ? 'fa-ban' : 'fa-check-circle'"></i>
+                                </a>
+                                <a th:href="@{/admin/meals/delete/{id}(id=${meal.id})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Are you sure you want to delete this meal?')"
+                                   title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

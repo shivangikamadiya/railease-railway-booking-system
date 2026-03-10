@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin/admin-layout}">
+<head>
+    <title layout:fragment="title">Edit Train</title>
+</head>
+<body>
+<div layout:fragment="admin-content">
+    <div class="page-header">
+        <h4 class="fw-bold mb-0">
+            <i class="fas fa-edit me-2 text-primary"></i>
+            Edit Train
+        </h4>
+        <a th:href="@{/admin/trains}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Trains
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form th:action="@{/admin/trains/update/{id}(id=${trainDTO.id})}" th:object="${trainDTO}" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Train Number *</label>
+                        <input type="number" class="form-control" id="trainNo" name="trainNo"
+                               th:field="*{id}" placeholder="Enter train number" min="1" readonly>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Train Name *</label>
+                        <input type="text" class="form-control" th:field="*{trainName}"
+                               placeholder="Enter train name" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('trainName')}"
+                             th:errors="*{trainName}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Source Station *</label>
+                        <input type="text" class="form-control" th:field="*{source}"
+                               placeholder="Enter source station" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('source')}"
+                             th:errors="*{source}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Destination Station *</label>
+                        <input type="text" class="form-control" th:field="*{destination}"
+                               placeholder="Enter destination station" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('destination')}"
+                             th:errors="*{destination}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Departure Time *</label>
+                        <input type="time" class="form-control" th:field="*{departureTime}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('departureTime')}"
+                             th:errors="*{departureTime}"></div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Arrival Time *</label>
+                        <input type="time" class="form-control" th:field="*{arrivalTime}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('arrivalTime')}"
+                             th:errors="*{arrivalTime}"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Travel Date *</label>
+                        <input type="date" class="form-control" th:field="*{travelDate}"
+                               th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('travelDate')}"
+                             th:errors="*{travelDate}"></div>
+                    </div>
+                </div>
+
+                <!-- Seat Categories -->
+                <h5 class="mt-4 mb-3 fw-bold text-primary">Seat Availability</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">AC Seats *</label>
+                        <input type="number" class="form-control seat-input" id="acSeatsInput" 
+                               name="acSeats" th:value="${trainDTO.acSeats}" placeholder="Enter AC seats" min="0" required oninput="calculateTotalSeats()">
+                        <div class="text-danger" th:if="${#fields.hasErrors('acSeats')}"
+                             th:errors="*{acSeats}"></div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Sleeper Seats *</label>
+                        <input type="number" class="form-control seat-input" id="sleeperSeatsInput" 
+                               name="sleeperSeats" th:value="${trainDTO.sleeperSeats}" placeholder="Enter Sleeper seats" min="0" required oninput="calculateTotalSeats()">
+                        <div class="text-danger" th:if="${#fields.hasErrors('sleeperSeats')}"
+                             th:errors="*{sleeperSeats}"></div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">General Seats *</label>
+                        <input type="number" class="form-control seat-input" id="generalSeatsInput" 
+                               name="generalSeats" th:value="${trainDTO.generalSeats}" placeholder="Enter General seats" min="0" required oninput="calculateTotalSeats()">
+                        <div class="text-danger" th:if="${#fields.hasErrors('generalSeats')}"
+                             th:errors="*{generalSeats}"></div>
+                    </div>
+                </div>
+
+                <!-- Fare Categories -->
+                <h5 class="mt-4 mb-3 fw-bold text-primary">Fare Details</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">AC Fare (₹) *</label>
+                        <input type="number" step="0.01" class="form-control" id="acFareInput" 
+                               name="acFare" th:value="${trainDTO.acFare}" placeholder="Enter AC fare" min="0" required oninput="calculateTotalSeats()">
+                        <div class="text-danger" th:if="${#fields.hasErrors('acFare')}"
+                             th:errors="*{acFare}"></div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Sleeper Fare (₹) *</label>
+                        <input type="number" step="0.01" class="form-control" 
+                               name="sleeperFare" th:value="${trainDTO.sleeperFare}" placeholder="Enter Sleeper fare" min="0" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('sleeperFare')}"
+                             th:errors="*{sleeperFare}"></div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">General Fare (₹) *</label>
+                        <input type="number" step="0.01" class="form-control" 
+                               name="generalFare" th:value="${trainDTO.generalFare}" placeholder="Enter General fare" min="0" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('generalFare')}"
+                             th:errors="*{generalFare}"></div>
+                    </div>
+                </div>
+
+                <!-- Hidden fields for auto-calculated values - these will be updated by JavaScript -->
+                <input type="hidden" name="availableSeats" id="availableSeatsHidden" th:value="${trainDTO.availableSeats != null ? trainDTO.availableSeats : 0}" />
+                <input type="hidden" name="ticketPrice" id="ticketPriceHidden" th:value="${trainDTO.ticketPrice != null ? trainDTO.ticketPrice : 0}" />
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" th:field="*{isActive}" id="isActive">
+                    <label class="form-check-label" for="isActive">Active (available for booking)</label>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Train
+                    </button>
+                    <a th:href="@{/admin/trains}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function calculateTotalSeats() {
+            var acSeats = parseInt(document.getElementById('acSeatsInput').value) || 0;
+            var sleeperSeats = parseInt(document.getElementById('sleeperSeatsInput').value) || 0;
+            var generalSeats = parseInt(document.getElementById('generalSeatsInput').value) || 0;
+            
+            var totalSeats = acSeats + sleeperSeats + generalSeats;
+            document.getElementById('availableSeatsHidden').value = totalSeats;
+            
+            // Also set ticketPrice to AC fare as default
+            var acFare = parseFloat(document.getElementById('acFareInput').value) || 0;
+            document.getElementById('ticketPriceHidden').value = acFare;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateTotalSeats();
+        });
+    </script>
+</div>
+</body>
+</html>

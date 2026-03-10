@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Booking Confirmation - RailEase</title>
+    <style>
+        .confirmation-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .journey-card {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border-radius: 16px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .journey-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+        .station-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .station-name {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .station-code {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .train-icon {
+            font-size: 32px;
+        }
+
+        .journey-time {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .fare-summary {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .fare-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .fare-row.total {
+            border-top: 2px solid #dee2e6;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .fare-row.total .fare-amount {
+            color: #4361ee;
+        }
+
+        .class-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .class-badge.ac {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .class-badge.sleeper {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .class-badge.general {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .proceed-btn {
+            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+            border: none;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            width: 100%;
+            color: white;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .proceed-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        }
+
+        .cancel-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .cancel-link a {
+            color: #6c757d;
+            text-decoration: none;
+        }
+
+        .cancel-link a:hover {
+            color: #dc3545;
+        }
+
+        .info-icon {
+            color: #4361ee;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="confirmation-container">
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="progress" style="height: 40px; border-radius: 20px;">
+                    <div class="progress-bar bg-success" style="width: 33%; border-radius: 20px 0 0 20px;">
+                        <i class="bi bi-check-circle me-2"></i>Booking
+                    </div>
+                    <div class="progress-bar bg-warning" style="width: 34%;">
+                        <i class="bi bi-check-circle me-2"></i>Confirm
+                    </div>
+                    <div class="progress-bar bg-secondary" style="width: 33%; border-radius: 0 20px 20px 0;">
+                        <i class="bi bi-credit-card me-2"></i>Payment
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journey Card -->
+            <div class="journey-card">
+                <div class="station-info">
+                    <div class="text-start">
+                        <div class="station-name" th:text="${ticket.sourceStation}">Mumbai</div>
+                        <div class="station-code" th:text="${ticket.sourceStation}">Source</div>
+                    </div>
+                    <div class="train-icon">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                    <div class="text-end">
+                        <div class="station-name" th:text="${ticket.destinationStation}">Delhi</div>
+                        <div class="station-code" th:text="${ticket.destinationStation}">Destination</div>
+                    </div>
+                </div>
+                <div class="journey-time text-center">
+                    <i class="bi bi-calendar me-2"></i>
+                    <span th:text="${#temporals.format(ticket.journeyDate, 'EEEE, dd MMMM yyyy')}">Monday, 15 January 2026</span>
+                </div>
+            </div>
+
+            <!-- Train & Passenger Details -->
+            <div class="detail-card">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-train-front me-2 text-primary"></i>Journey Details
+                </h6>
+                <div class="detail-row">
+                    <span class="detail-label">Train Number</span>
+                    <span class="detail-value" th:text="${trainNumber}">12001</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Train Name</span>
+                    <span class="detail-value" th:text="${trainName}">Rajdhani Express</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Class</span>
+                    <span class="detail-value">
+                        <span class="class-badge" 
+                              th:classappend="${ticket.classType == 'AC'} ? 'ac' : (${ticket.classType == 'SLEEPER'} ? 'sleeper' : 'general')"
+                              th:text="${ticket.classType}">AC</span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Passenger Name</span>
+                    <span class="detail-value" th:text="${ticket.passengerName}">John Doe</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Age / Gender</span>
+                    <span class="detail-value" th:text="${ticket.passengerAge} + ' / ' + ${ticket.passengerGender}">25 / MALE</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Number of Seats</span>
+                    <span class="detail-value" th:text="${ticket.numberOfSeats}">1</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Ticket ID</span>
+                    <span class="detail-value" th:text="${ticket.ticketId}">TK123456</span>
+                </div>
+            </div>
+
+            <!-- Fare Summary -->
+            <div class="detail-card">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-currency-rupee me-2 text-primary"></i>Fare Summary
+                </h6>
+                <div class="fare-summary">
+                    <div class="fare-row">
+                        <span>Base Fare (<span th:text="${ticket.classType}">AC</span> × <span th:text="${ticket.numberOfSeats}">1</span> seat<span th:if="${ticket.numberOfSeats > 1}">s</span>)</span>
+                        <span>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare / 1.05, 0, 'COMMA', 2, 'POINT')}">1,500.00</span></span>
+                    </div>
+                    <div class="fare-row">
+                        <span>GST (5%)</span>
+                        <span>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare - (ticket.totalFare / 1.05), 0, 'COMMA', 2, 'POINT')}">75.00</span></span>
+                    </div>
+                    <div class="fare-row total">
+                        <span>Total Amount</span>
+                        <span class="fare-amount">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">1,575.00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Notice -->
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Please review your booking details before proceeding to payment. Once payment is made, the ticket cannot be cancelled for a full refund.
+            </div>
+
+            <!-- Proceed to Payment -->
+            <form th:action="@{/booking/payment/} + ${ticket.ticketId}" method="get">
+                <button type="submit" class="proceed-btn">
+                    <i class="bi bi-credit-card me-2"></i>
+                    Proceed to Payment - ₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">1,575.00</span>
+                </button>
+            </form>
+
+            <!-- Cancel Link -->
+            <div class="cancel-link">
+                <a th:href="@{/user/my-bookings}">
+                    <i class="bi bi-x-circle me-1"></i>Cancel Booking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+            <!-- Journey Card -->
+            <div class="journey-card">
+                <div class="station-info">
+                    <div class="text-start">
+                        <div class="station-name" th:text="${ticket.sourceStation}">Mumbai</div>
+                        <div class="station-code" th:text="${ticket.sourceStation}">Source</div>
+                    </div>
+                    <div class="train-icon">
+                        <i class="bi bi-arrow-right"></i>
+                    </div>
+                    <div class="text-end">
+                        <div class="station-name" th:text="${ticket.destinationStation}">Delhi</div>
+                        <div class="station-code" th:text="${ticket.destinationStation}">Destination</div>
+                    </div>
+                </div>
+                <div class="journey-time text-center">
+                    <i class="bi bi-calendar me-2"></i>
+                    <span th:text="${#temporals.format(ticket.journeyDate, 'EEEE, dd MMMM yyyy')}">Monday, 15 January 2026</span>
+                </div>
+            </div>
+
+            <!-- Train & Passenger Details -->
+            <div class="detail-card">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-train-front me-2 text-primary"></i>Journey Details
+                </h6>
+                <div class="detail-row">
+                    <span class="detail-label">Train Number</span>
+                    <span class="detail-value" th:text="${trainNumber}">12001</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Train Name</span>
+                    <span class="detail-value" th:text="${trainName}">Rajdhani Express</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Class</span>
+                    <span class="detail-value">
+                        <span class="class-badge" 
+                              th:classappend="${ticket.classType == 'AC'} ? 'ac' : (${ticket.classType == 'SLEEPER'} ? 'sleeper' : 'general')"
+                              th:text="${ticket.classType}">AC</span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Passenger Name</span>
+                    <span class="detail-value" th:text="${ticket.passengerName}">John Doe</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Age / Gender</span>
+                    <span class="detail-value" th:text="${ticket.passengerAge} + ' / ' + ${ticket.passengerGender}">25 / MALE</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Number of Seats</span>
+                    <span class="detail-value" th:text="${ticket.numberOfSeats}">1</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Ticket ID</span>
+                    <span class="detail-value" th:text="${ticket.ticketId}">TK123456</span>
+                </div>
+            </div>
+
+            <!-- Fare Summary -->
+            <div class="detail-card">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-currency-rupee me-2 text-primary"></i>Fare Summary
+                </h6>
+                <div class="fare-summary">
+                    <div class="fare-row">
+                        <span>Base Fare (<span th:text="${ticket.classType}">AC</span> × <span th:text="${ticket.numberOfSeats}">1</span> seat<span th:if="${ticket.numberOfSeats > 1}">s</span>)</span>
+                        <span>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare / 1.05, 0, 'COMMA', 2, 'POINT')}">1,500.00</span></span>
+                    </div>
+                    <div class="fare-row">
+                        <span>GST (5%)</span>
+                        <span>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare - (ticket.totalFare / 1.05), 0, 'COMMA', 2, 'POINT')}">75.00</span></span>
+                    </div>
+                    <div class="fare-row total">
+                        <span>Total Amount</span>
+                        <span class="fare-amount">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">1,575.00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Notice -->
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Please review your booking details before proceeding to payment. Once payment is made, the ticket cannot be cancelled for a full refund.
+            </div>
+
+            <!-- Proceed to Payment -->
+            <form th:action="@{/booking/payment/} + ${ticket.ticketId}" method="get">
+                <button type="submit" class="proceed-btn">
+                    <i class="bi bi-credit-card me-2"></i>
+                    Proceed to Payment - ₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">1,575.00</span>
+                </button>
+            </form>
+
+            <!-- Cancel Link -->
+            <div class="cancel-link">
+                <a th:href="@{/user/my-bookings}">
+                    <i class="bi bi-x-circle me-1"></i>Cancel Booking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
