@@ -720,11 +720,11 @@ public class BookingServiceImpl implements BookingService {
         // Use class-specific fare based on classType
         double classFare;
         if ("AC".equalsIgnoreCase(classType)) {
-            classFare = train.getAcFare() != null ? train.getAcFare() : train.getTicketPrice();
+            classFare = (train.getAcFare() != null && train.getAcFare() > 0) ? train.getAcFare() : train.getTicketPrice();
         } else if ("SLEEPER".equalsIgnoreCase(classType)) {
-            classFare = train.getSleepperFare() != null ? train.getSleepperFare() : train.getTicketPrice();
+            classFare = (train.getSleeperFare() != null && train.getSleeperFare() > 0) ? train.getSleeperFare() : train.getTicketPrice();
         } else if ("GENERAL".equalsIgnoreCase(classType)) {
-            classFare = train.getGeneralFare() != null ? train.getGeneralFare() : train.getTicketPrice();
+            classFare = (train.getGeneralFare() != null && train.getGeneralFare() > 0) ? train.getGeneralFare() : train.getTicketPrice();
         } else {
             // Default to ticketPrice if classType is not recognized
             classFare = train.getTicketPrice();

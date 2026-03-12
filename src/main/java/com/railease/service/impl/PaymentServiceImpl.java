@@ -55,11 +55,11 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Generate payment ID
-        String paymentId = generatePaymentId(paymentDTO.getPaymentMethod());
+        String paymentId = generatePaymentId(paymentDTO.getPaymentMethod().toUpperCase());
 
         // Update ticket with payment details
         ticket.setPaymentId(paymentId);
-        ticket.setPaymentMethod(paymentDTO.getPaymentMethod());
+        ticket.setPaymentMethod(paymentDTO.getPaymentMethod().toUpperCase());
         ticket.setPaymentStatus("PAID");
         ticket.setBookingStatus("CONFIRMED");
         ticket.setTicketStatus(TicketStatus.CONFIRMED);
@@ -94,7 +94,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // Different success rates based on payment method for realism
-        double successRate = switch (paymentDTO.getPaymentMethod()) {
+        double successRate = switch (paymentDTO.getPaymentMethod().toUpperCase()) {
             case "CARD" -> 0.95; // 95% success rate for cards
             case "UPI" -> 0.92;   // 92% success rate for UPI
             case "NETBANKING" -> 0.90; // 90% success rate for netbanking
@@ -136,22 +136,31 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public boolean validatePayment(PaymentDTO paymentDTO) {
-        log.debug("Validating payment for method: {}", paymentDTO.getPaymentMethod());
+        // Handle null or empty payment method - default to CARD
+        String paymentMethod = paymentDTO.getPaymentMethod();
+        if (paymentMethod == null || paymentMethod.trim().isEmpty()) {
+            log.warn("Payment method is null or empty, defaulting to CARD");
+            paymentDTO.setPaymentMethod("CARD");
+            paymentMethod = "CARD";
+        }
+        
+        log.debug("Validating payment for method: {}", paymentMethod.toUpperCase());
 
         // Basic validation
-        if (paymentDTO.getAmount() <= 0) {
+        if (paymentDTO.getAmount() == null || paymentDTO.getAmount() <= 0) {
             log.warn("Invalid amount: {}", paymentDTO.getAmount());
             return false;
         }
 
         // Payment method specific validation
-        return switch (paymentDTO.getPaymentMethod()) {
+        return switch (paymentMethod.toUpperCase()) {
             case "CARD" -> validateCardPayment(paymentDTO);
             case "UPI" -> validateUPIPayment(paymentDTO);
             case "NETBANKING" -> validateNetBankingPayment(paymentDTO);
             default -> {
-                log.warn("Unknown payment method: {}", paymentDTO.getPaymentMethod());
-                yield false;
+                log.warn("Unknown payment method: {}, defaulting to CARD", paymentMethod);
+                paymentDTO.setPaymentMethod("CARD");
+                yield validateCardPayment(paymentDTO);
             }
         };
     }

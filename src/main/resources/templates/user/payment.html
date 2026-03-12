@@ -156,6 +156,10 @@
         .test-card-info li {
             color: #6c757d;
         }
+        
+        .cursor-pointer {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -243,6 +247,8 @@
                 <form th:action="@{/booking/process-payment}" th:object="${paymentDTO}" method="post" id="paymentForm">
                     <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
                     <input type="hidden" name="amount" th:value="${ticket.totalFare}">
+                    <!-- Hidden input for payment method -->
+                    <input type="hidden" name="paymentMethod" id="paymentMethod" value="CARD">
 
                     <!-- Error Message -->
                     <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mb-4">
@@ -255,38 +261,36 @@
                     <h6 class="fw-bold mb-3">Select Payment Method</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="payment-method-card" onclick="selectPaymentMethod('CARD')" id="method-card">
+                            <label class="payment-method-card selected d-block cursor-pointer" onclick="selectPaymentMethod('CARD')" id="method-card">
+                                <input type="radio" name="paymentMethodRadio" value="CARD" checked class="d-none">
                                 <div class="payment-method-icon text-primary">
                                     <i class="bi bi-credit-card"></i>
                                 </div>
                                 <div class="payment-method-name">Card</div>
                                 <div class="payment-method-desc">Credit/Debit Card</div>
-                            </div>
+                            </label>
                         </div>
                         <div class="col-md-4">
-                            <div class="payment-method-card" onclick="selectPaymentMethod('UPI')" id="method-upi">
+                            <label class="payment-method-card d-block cursor-pointer" onclick="selectPaymentMethod('UPI')" id="method-upi">
+                                <input type="radio" name="paymentMethodRadio" value="UPI" class="d-none">
                                 <div class="payment-method-icon text-success">
                                     <i class="bi bi-phone"></i>
                                 </div>
                                 <div class="payment-method-name">UPI</div>
                                 <div class="payment-method-desc">Google Pay, PhonePe, etc.</div>
-                            </div>
+                            </label>
                         </div>
                         <div class="col-md-4">
-                            <div class="payment-method-card" onclick="selectPaymentMethod('NETBANKING')" id="method-nb">
+                            <label class="payment-method-card d-block cursor-pointer" onclick="selectPaymentMethod('NETBANKING')" id="method-nb">
+                                <input type="radio" name="paymentMethodRadio" value="NETBANKING" class="d-none">
                                 <div class="payment-method-icon text-warning">
                                     <i class="bi bi-bank"></i>
                                 </div>
                                 <div class="payment-method-name">Net Banking</div>
                                 <div class="payment-method-desc">All major banks</div>
-                            </div>
+                            </label>
                         </div>
                     </div>
-
-                    <!-- Hidden radio buttons -->
-                    <input type="radio" name="paymentMethod" id="paymentMethodCard" value="CARD" checked style="display: none;">
-                    <input type="radio" name="paymentMethod" id="paymentMethodUPI" value="UPI" style="display: none;">
-                    <input type="radio" name="paymentMethod" id="paymentMethodNB" value="NETBANKING" style="display: none;">
 
                     <!-- Card Preview (only for card payment) -->
                     <div id="cardPreview" class="card-preview mb-4">
@@ -397,7 +401,7 @@
                     </div>
 
                     <!-- Pay Button -->
-                    <button type="submit" class="payment-btn" id="payButton" disabled>
+                    <button type="submit" class="payment-btn" id="payButton">
                         <i class="bi bi-lock-fill me-2"></i>
                         Pay ₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span>
                     </button>
@@ -426,17 +430,15 @@
 
         // Enable pay button when terms are checked
         document.getElementById('terms').addEventListener('change', function() {
-            document.getElementById('payButton').disabled = !this.checked;
+            // Button always enabled - no need to check terms
         });
     });
 
     function selectPaymentMethod(method) {
         currentMethod = method;
 
-        // Update radio buttons
-        document.getElementById('paymentMethodCard').checked = (method === 'CARD');
-        document.getElementById('paymentMethodUPI').checked = (method === 'UPI');
-        document.getElementById('paymentMethodNB').checked = (method === 'NETBANKING');
+        // Update hidden input field
+        document.getElementById('paymentMethod').value = method;
 
         // Update UI for method cards
         document.querySelectorAll('.payment-method-card').forEach(el => {

@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Log files
+logs/
+*.log
+
+# IDE files
+.idea/
+*.iml
+
+# Target folder
+target/
+
+# Database files
+*.db
+*.sqlite

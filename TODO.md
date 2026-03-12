@@ -1,37 +1,28 @@
-# RailEase - Ticket Booking Issues Analysis
+# Train Ticket Booking - User Side Issues Fix
 
-## Issues Reported:
-1. Train ticket booking is not working from user side
-2. Payment is not working (doesn't proceed to confirmation)
-3. PDF should be generated after ticket booking
-4. All details should be connected with database
+## Task Overview
+Fix necessary issues in train ticket booking from the user side.
 
-## Analysis Summary:
+## Issues Identified & Fix Plan:
 
-### 1. Ticket Booking - WORKING
-- Logs show tickets are being created successfully (e.g., TK2026031016971001)
-- Database connection is active and working
+### 1. **Critical: Seat availability not updated after payment** ✅ FIXING
+- Location: `PaymentServiceImpl.java`
+- Problem: When payment is successful, the train's available seats are not decremented
+- Fix: Add TrainRepository and update available seats after successful payment
 
-### 2. Payment - INVESTIGATION NEEDED
-- Payment form exists at `/booking/payment/{ticketId}`
-- Backend payment processing is implemented in PaymentServiceImpl
-- Test card numbers: 4111111111111111 (Visa), 5555555555554444 (Mastercard)
-- Possible issues:
-  - JavaScript validation blocking submission
-  - User not using test card numbers
-  - Session timeout
+### 2. **Critical: Race condition in seat booking** ⏳ PENDING
+- Location: `BookingServiceImpl.java` - `createTicket` method
+- Problem: Seats are not reserved when ticket is created (only checked), leading to potential overselling
+- Fix: Reserve seats when ticket is created
 
-### 3. PDF Generation - IMPLEMENTED
-- PdfServiceImpl generates PDF tickets
-- Download link exists in booking-success.html
-- Endpoint: `/booking/download-pdf/{ticketId}`
+### 3. **Missing train timing details on confirmation page** ⏳ PENDING
+- Location: `booking-confirmation.html`
+- Problem: Departure and arrival times not displayed
+- Fix: Pass departure/arrival times to the confirmation page
 
-### 4. Database Connection - WORKING
-- All ticket data is saved to database
-- Logs show successful INSERT operations
+### 4. **Payment form card details binding** ⏳ PENDING
+- Location: `BookingController.java` - `processPayment` method
+- Problem: Card details from payment form may not be properly passed
+- Fix: Ensure card details are properly bound in the controller
 
-## Action Items:
-- [ ] Verify payment form submission works correctly
-- [ ] Check if JavaScript validation is blocking valid submissions
-- [ ] Ensure test card instructions are clear to users
-- [ ] Test complete booking flow end-to-end
+## Status: In Progress

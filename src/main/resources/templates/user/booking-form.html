@@ -35,10 +35,9 @@
                         </div>
 
                         <!-- Booking Form -->
-                        <form th:action="@{/booking/confirm}" method="post">
+                        <form th:action="@{/booking/confirm}" method="post" id="bookingForm">
                             <input type="hidden" name="trainNo" th:value="${train.trainNo}">
-                            <input type="hidden" name="classType" th:value="${classType}">
-                            <input type="hidden" name="journeyDate" th:value="${journeyDate}">
+                            <input type="hidden" name="classType" id="hiddenClassType" th:value="${classType}">
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -82,8 +81,8 @@
                                 </div>
 
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label fw-bold">Journey Date</label>
-                                    <input type="text" class="form-control" th:value="${journeyDate}" readonly>
+                                    <label class="form-label fw-bold">Journey Date *</label>
+                                    <input type="date" class="form-control" name="journeyDate" id="journeyDate" required>
                                 </div>
                             </div>
 
@@ -147,13 +146,49 @@
             document.getElementById('totalFare').innerText = '₹' + total.toFixed(2);
         }
 
-        // Set default class type from the parameter
+        // Set default values when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            var classType = [[${classType}]];
+            // Get classType from the hidden input field which is set by Thymeleaf
+            var classType = document.getElementById('hiddenClassType').value;
+            
             if (classType) {
-                document.getElementById('classType').value = classType;
+                var selectElement = document.getElementById('classType');
+                selectElement.value = classType;
             }
+            
+            // Set the journey date from the parameter or default to today
+            var journeyDate = /*[[${journeyDate}]]*/ null;
+            var dateInput = document.getElementById('journeyDate');
+            
+            if (journeyDate) {
+                dateInput.value = journeyDate;
+            } else {
+                // Default to today
+                var today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            
+            // Set minimum date to today
+            var today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('min', today);
+            
             updateFare();
+        });
+        
+        // Form validation
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            var dateInput = document.getElementById('journeyDate');
+            var selectedDate = new Date(dateInput.value);
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                e.preventDefault();
+                alert('Journey date cannot be in the past. Please select a valid date.');
+                return false;
+            }
+            
+            return true;
         });
     </script>
 </div>

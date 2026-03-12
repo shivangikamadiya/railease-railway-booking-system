@@ -165,6 +165,7 @@ public class BookingController {
             PaymentDTO paymentDTO = new PaymentDTO();
             paymentDTO.setTicketId(ticketId);
             paymentDTO.setAmount(ticket.getTotalFare());
+            paymentDTO.setPaymentMethod("CARD"); // Default to CARD
 
             model.addAttribute("ticket", ticket);
             model.addAttribute("trainName", trainName);
@@ -191,13 +192,25 @@ public class BookingController {
         }
 
         try {
+            // Debug logging
+            log.info("Processing payment for ticket: {}, paymentMethod: {}, amount: {}", 
+                    paymentDTO.getTicketId(), paymentDTO.getPaymentMethod(), paymentDTO.getAmount());
+            
+            // Ensure payment method is set
+            if (paymentDTO.getPaymentMethod() == null || paymentDTO.getPaymentMethod().trim().isEmpty()) {
+                paymentDTO.setPaymentMethod("CARD");
+                log.info("Payment method was empty, defaulting to CARD");
+            }
+
             if (!paymentService.validatePayment(paymentDTO)) {
+                log.warn("Payment validation failed for ticket: {}", paymentDTO.getTicketId());
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Invalid payment details. Please check and try again.");
                 return "redirect:/booking/confirmation/" + paymentDTO.getTicketId();
             }
 
             Ticket ticket = paymentService.processPayment(paymentDTO);
+            log.info("Payment processed successfully for ticket: {}, redirecting to success page", ticket.getTicketId());
 
             session.removeAttribute("pendingTicket");
 
@@ -207,7 +220,7 @@ public class BookingController {
             return "redirect:/booking/success/" + ticket.getTicketId();
 
         } catch (Exception e) {
-            log.error("Payment failed: {}", e.getMessage());
+            log.error("Payment failed for ticket: {}, error: {}", paymentDTO.getTicketId(), e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/booking/confirmation/" + paymentDTO.getTicketId();
         }

@@ -28,7 +28,12 @@ public class SessionInterceptor implements HandlerInterceptor {
                 uri.equals("/RailEase/") ||
                 uri.equals("/RailEase") ||
                 uri.equals("/RailEase/home") ||
-                uri.equals("/home")) {
+                uri.equals("/home") ||
+                uri.contains("/booking/confirmation/") ||
+                uri.contains("/booking/payment/") ||
+                uri.contains("/booking/success/") ||
+                uri.contains("/booking/download-pdf/") ||
+                uri.contains("/booking/view/")) {
             return true;
         }
 
