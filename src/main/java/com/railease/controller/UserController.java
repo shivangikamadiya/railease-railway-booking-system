@@ -452,7 +452,6 @@ public class UserController {
 
         model.addAttribute("train", train);
         model.addAttribute("availableSeats", availableSeats);
-        model.addAttribute("ticketPrice", train.getTicketPrice());
         model.addAttribute("source", train.getSource());
         model.addAttribute("destination", train.getDestination());
         model.addAttribute("selectedDate", journeyDate != null ? journeyDate : LocalDate.now().toString());

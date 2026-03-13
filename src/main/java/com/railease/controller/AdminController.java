@@ -123,7 +123,6 @@ public class AdminController {
             trainDTO.setArrivalTime(train.getArrivalTime());
             trainDTO.setTravelDate(train.getTravelDate() != null ? train.getTravelDate() : train.getJourneyDate());
             trainDTO.setAvailableSeats(train.getAvailableSeats());
-            trainDTO.setTicketPrice(train.getTicketPrice());
             // Seat fields
             trainDTO.setAcSeats(train.getAcSeats());
             trainDTO.setSleeperSeats(train.getSleeperSeats());
@@ -493,12 +492,6 @@ public class AdminController {
             log.info("Calculated total seats: {}", totalSeats);
         }
         
-        // Set ticket price to AC fare as default
-        if (trainDTO.getAcFare() != null) {
-            trainDTO.setTicketPrice(trainDTO.getAcFare());
-            log.info("Set ticket price to AC fare: {}", trainDTO.getAcFare());
-        }
-
         log.info("Train DTO received - acSeats: {}, sleeperSeats: {}, generalSeats: {}, acFare: {}, sleeperFare: {}, generalFare: {}",
                 trainDTO.getAcSeats(), trainDTO.getSleeperSeats(), trainDTO.getGeneralSeats(),
                 trainDTO.getAcFare(), trainDTO.getSleeperFare(), trainDTO.getGeneralFare());

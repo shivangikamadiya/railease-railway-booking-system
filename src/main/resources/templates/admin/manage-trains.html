@@ -31,7 +31,7 @@
                         <th>Arrival</th>
                         <th>Travel Date</th>
                         <th>Seats</th>
-                        <th>Price</th>
+                        <th>AC Fare</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -46,7 +46,7 @@
                         <td th:text="${train.arrivalTime}">08:30</td>
                         <td th:text="${#temporals.format(train.travelDate, 'dd-MM-yyyy')}">01-01-2026</td>
                         <td th:text="${train.availableSeats}">120</td>
-                        <td>₹<span th:text="${#numbers.formatDecimal(train.ticketPrice, 0, 'COMMA', 2, 'POINT')}">2500</span></td>
+                        <td>₹<span th:text="${#numbers.formatDecimal(train.acFare, 0, 'COMMA', 2, 'POINT')}">2500</span></td>
                         <td>
                                     <span class="badge" th:classappend="${train.isActive} ? 'bg-success' : 'bg-danger'">
                                         <span th:text="${train.isActive} ? 'Active' : 'Inactive'"></span>

@@ -79,7 +79,6 @@ public class TrainServiceImpl implements TrainService {
                 .journeyDate(trainDTO.getJourneyDate())
                 .travelDate(trainDTO.getJourneyDate())
                 .availableSeats(totalSeats)
-                .ticketPrice(trainDTO.getAcFare())
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
                 .generalSeats(trainDTO.getGeneralSeats())
@@ -122,7 +121,6 @@ public class TrainServiceImpl implements TrainService {
                 .journeyDate(trainDTO.getTravelDate())
                 .travelDate(trainDTO.getTravelDate())
                 .availableSeats(totalSeats)
-                .ticketPrice(trainDTO.getTicketPrice())
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
                 .generalSeats(trainDTO.getGeneralSeats())
@@ -173,7 +171,6 @@ public class TrainServiceImpl implements TrainService {
         }
         if (trainDTO.getAcFare() != null) {
             existingTrain.setAcFare(trainDTO.getAcFare());
-            existingTrain.setTicketPrice(trainDTO.getAcFare());
         }
         if (trainDTO.getSleeperFare() != null) {
             existingTrain.setSleeperFare(trainDTO.getSleeperFare());
@@ -249,9 +246,6 @@ public class TrainServiceImpl implements TrainService {
         }
         if (trainDTO.getGeneralFare() != null) {
             existingTrain.setGeneralFare(trainDTO.getGeneralFare());
-        }
-        if (trainDTO.getTicketPrice() != null) {
-            existingTrain.setTicketPrice(trainDTO.getTicketPrice());
         }
         if (trainDTO.getIsActive() != null) {
             existingTrain.setIsActive(trainDTO.getIsActive());

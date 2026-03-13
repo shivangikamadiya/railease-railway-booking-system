@@ -41,9 +41,6 @@ public class TrainDTO {
     // Available seats - auto-calculated from AC + Sleeper + General seats
     private Integer availableSeats;
 
-    // Ticket price - auto-set to AC fare
-    private Double ticketPrice;
-
     // AC Seats - validation handled by controller/service
     private Integer acSeats;
 

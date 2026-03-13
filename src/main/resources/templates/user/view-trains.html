@@ -74,7 +74,7 @@
                                     <th>Departure</th>
                                     <th>Arrival</th>
                                     <th>Available Seats</th>
-                                    <th>Price</th>
+                                    <th>Starting Fare</th>
                                     <th>Action</th>
                                 </tr>
                                 </thead>
@@ -89,7 +89,7 @@
                                     <td>
                                         <span class="badge bg-info" th:text="${train.availableSeats}">120</span>
                                     </td>
-                                    <td>₹<span th:text="${train.ticketPrice}">2500</span></td>
+                                    <td>₹<span th:text="${train.generalFare}">2500</span></td>
                                     <td>
                                         <a th:href="@{/user/train-details/{id}(id=${train.trainNo}, journeyDate=${param.journeyDate})}"
                                            class="btn btn-sm btn-outline-info mb-1 w-100">
@@ -130,3 +130,4 @@
 </div>
 </body>
 </html>
+

@@ -59,7 +59,6 @@ CREATE TABLE IF NOT EXISTS trains (
     arrival_time TIME NOT NULL,
     travel_date DATE,
     available_seats INT DEFAULT 0,
-    ticket_price DOUBLE DEFAULT 0,
     ac_seats INT DEFAULT 0,
     sleeper_seats INT DEFAULT 0,
     general_seats INT DEFAULT 0,

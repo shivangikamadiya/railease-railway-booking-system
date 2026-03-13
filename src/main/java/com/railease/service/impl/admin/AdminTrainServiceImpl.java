@@ -54,7 +54,6 @@ public class AdminTrainServiceImpl implements AdminTrainService {
                 .travelDate(trainDTO.getJourneyDate())
                 .journeyDate(trainDTO.getJourneyDate())
                 .availableSeats(trainDTO.getAcSeats() + trainDTO.getSleeperSeats() + trainDTO.getGeneralSeats())
-                .ticketPrice(trainDTO.getAcFare())
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
                 .generalSeats(trainDTO.getGeneralSeats())
@@ -83,7 +82,6 @@ public class AdminTrainServiceImpl implements AdminTrainService {
         existingTrain.setTravelDate(trainDTO.getJourneyDate());
         existingTrain.setJourneyDate(trainDTO.getJourneyDate());
         existingTrain.setAvailableSeats(trainDTO.getAcSeats() + trainDTO.getSleeperSeats() + trainDTO.getGeneralSeats());
-        existingTrain.setTicketPrice(trainDTO.getAcFare());
         existingTrain.setAcSeats(trainDTO.getAcSeats());
         existingTrain.setSleeperSeats(trainDTO.getSleeperSeats());
         existingTrain.setGeneralSeats(trainDTO.getGeneralSeats());

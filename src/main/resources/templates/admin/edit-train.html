@@ -138,8 +138,6 @@
 
                 <!-- Hidden fields for auto-calculated values - these will be updated by JavaScript -->
                 <input type="hidden" name="availableSeats" id="availableSeatsHidden" th:value="${trainDTO.availableSeats != null ? trainDTO.availableSeats : 0}" />
-                <input type="hidden" name="ticketPrice" id="ticketPriceHidden" th:value="${trainDTO.ticketPrice != null ? trainDTO.ticketPrice : 0}" />
-
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" th:field="*{isActive}" id="isActive">
                     <label class="form-check-label" for="isActive">Active (available for booking)</label>
@@ -164,12 +162,7 @@
             var generalSeats = parseInt(document.getElementById('generalSeatsInput').value) || 0;
             
             var totalSeats = acSeats + sleeperSeats + generalSeats;
-            document.getElementById('availableSeatsHidden').value = totalSeats;
-            
-            // Also set ticketPrice to AC fare as default
-            var acFare = parseFloat(document.getElementById('acFareInput').value) || 0;
-            document.getElementById('ticketPriceHidden').value = acFare;
-        }
+            document.getElementById('availableSeatsHidden').value = totalSeats;        }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {

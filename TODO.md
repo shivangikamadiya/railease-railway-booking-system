@@ -1,28 +1,11 @@
-# Train Ticket Booking - User Side Issues Fix
+# RailEase Ticket Booking Fix - ticket_price NPE
 
-## Task Overview
-Fix necessary issues in train ticket booking from the user side.
+## Status: [IN PROGRESS]
 
-## Issues Identified & Fix Plan:
-
-### 1. **Critical: Seat availability not updated after payment** ✅ FIXING
-- Location: `PaymentServiceImpl.java`
-- Problem: When payment is successful, the train's available seats are not decremented
-- Fix: Add TrainRepository and update available seats after successful payment
-
-### 2. **Critical: Race condition in seat booking** ⏳ PENDING
-- Location: `BookingServiceImpl.java` - `createTicket` method
-- Problem: Seats are not reserved when ticket is created (only checked), leading to potential overselling
-- Fix: Reserve seats when ticket is created
-
-### 3. **Missing train timing details on confirmation page** ⏳ PENDING
-- Location: `booking-confirmation.html`
-- Problem: Departure and arrival times not displayed
-- Fix: Pass departure/arrival times to the confirmation page
-
-### 4. **Payment form card details binding** ⏳ PENDING
-- Location: `BookingController.java` - `processPayment` method
-- Problem: Card details from payment form may not be properly passed
-- Fix: Ensure card details are properly bound in the controller
-
-## Status: In Progress
+### 1. [ ] Create TODO.md ✅
+### 2. [ ] Edit Train.java - Remove ticketPrice field
+### 3. [ ] Edit BookingServiceImpl.java - Replace calculateBaseFare() with strict class lookup
+### 4. [ ] Restart Spring Boot: mvn spring-boot:run
+### 5. [ ] Test workflow: login → view-trains → details → form → confirm → payment → success
+### 6. [ ] Verify fares in DB (run sql/fix-train-fares.sql if needed)
+### 7. [ ] Mark complete

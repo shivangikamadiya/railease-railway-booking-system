@@ -30,10 +30,10 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Ticket Price (₹) *</label>
-                        <input type="number" step="0.01" class="form-control" th:field="*{ticketPrice}" required>
-                        <div class="text-danger" th:if="${#fields.hasErrors('ticketPrice')}"
-                             th:errors="*{ticketPrice}"></div>
+                        <label class="form-label fw-bold">AC Fare (₹) *</label>
+                        <input type="number" step="0.01" class="form-control" th:field="*{acFare}" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('acFare')}"
+                             th:errors="*{acFare}"></div>
                     </div>
                 </div>
 
