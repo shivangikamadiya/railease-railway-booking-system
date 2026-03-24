@@ -13,7 +13,13 @@ import java.util.List;
 @Repository
 public interface MealOrderRepository extends JpaRepository<MealOrder, Long> {
 
-    List<MealOrder> findByUserOrderByOrderDateDesc(User user);
+    @Query("SELECT mo FROM MealOrder mo " +
+            "LEFT JOIN FETCH mo.meal " +
+            "LEFT JOIN FETCH mo.ticket t " +
+            "LEFT JOIN FETCH t.train " +
+            "WHERE mo.user = :user " +
+            "ORDER BY mo.orderDate DESC")
+    List<MealOrder> findByUserOrderByOrderDateDesc(@Param("user") User user);
 
     @Query("SELECT mo FROM MealOrder mo WHERE mo.deliveryStatus = :status")
     List<MealOrder> findByDeliveryStatus(@Param("status") String status);

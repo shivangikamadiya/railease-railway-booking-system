@@ -70,5 +70,8 @@ public class MealOrder {
     protected void onCreate() {
         orderDate = LocalDateTime.now();
         deliveryStatus = "PENDING";
+        if (id == null) {
+            id = System.currentTimeMillis();
+        }
     }
 }

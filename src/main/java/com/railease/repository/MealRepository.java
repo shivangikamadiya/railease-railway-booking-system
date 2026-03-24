@@ -22,6 +22,9 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     boolean existsByMealName(String mealName);
 
-    @Query("SELECT m FROM Meal m JOIN m.trains t WHERE t.id = :trainNo")
+    @Query("SELECT m FROM Meal m JOIN m.trains t WHERE t.trainNo = :trainNo")
     List<Meal> findMealsByTrainNo(@Param("trainNo") Integer trainNo);
+
+    @Query("SELECT COUNT(m) > 0 FROM Meal m JOIN m.trains t WHERE m.mealId = :mealId AND t.trainNo = :trainNo")
+    boolean existsByMealIdAndTrainNo(@Param("mealId") Long mealId, @Param("trainNo") Integer trainNo);
 }

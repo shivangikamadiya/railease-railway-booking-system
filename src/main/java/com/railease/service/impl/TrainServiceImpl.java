@@ -301,10 +301,11 @@ public class TrainServiceImpl implements TrainService {
     @Override
     public int getAvailableSeats(Integer trainNo, String classType, LocalDate journeyDate) {
         Train train = getTrainByNumber(trainNo);
-        
+        String normalizedClassType = normalizeClassType(classType);
+
         int totalSeats;
-        if (classType != null) {
-            switch (classType.toUpperCase()) {
+        if (normalizedClassType != null) {
+            switch (normalizedClassType) {
                 case "AC":
                     totalSeats = train.getAcSeats() != null ? train.getAcSeats() : 0;
                     break;
@@ -321,9 +322,22 @@ public class TrainServiceImpl implements TrainService {
             totalSeats = train.getAvailableSeats() != null ? train.getAvailableSeats() : 0;
         }
 
-        Long bookedSeats = ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, classType);
+        Long bookedSeats = ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, normalizedClassType);
 
         return Math.max(0, totalSeats - (bookedSeats != null ? bookedSeats.intValue() : 0));
+    }
+
+    private String normalizeClassType(String classType) {
+        if (classType == null || classType.isBlank()) {
+            return null;
+        }
+
+        return switch (classType.trim().toUpperCase()) {
+            case "AC", "AC_SEATS", "AC-SEATS" -> "AC";
+            case "SLEEPER", "SLEEPER_SEATS", "SLEEPER-SEATS" -> "SLEEPER";
+            case "GENERAL", "GENERAL_SEATS", "GENERAL-SEATS" -> "GENERAL";
+            default -> classType.trim().toUpperCase();
+        };
     }
 
     @Override

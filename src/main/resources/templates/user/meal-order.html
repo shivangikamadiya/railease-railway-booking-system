@@ -164,7 +164,11 @@
                     <input type="hidden" name="deliveryStation" id="selectedStation" value="">
                     <input type="hidden" name="instructions" id="specialInstructions" value="">
 
-                    <div class="row g-4">
+                    <div th:if="${#lists.isEmpty(meals)}" class="alert alert-warning">
+                        No meals are available right now for this booking. Please try again later.
+                    </div>
+
+                    <div class="row g-4" th:unless="${#lists.isEmpty(meals)}">
                         <div th:each="meal : ${meals}" class="col-md-6">
                             <div class="meal-card" th:attr="data-id=${meal.mealId}, data-name=${meal.mealName}, data-price=${meal.price}, data-type=${meal.mealType}" onclick="selectMeal(this)">
                                 <div class="d-flex justify-content-between align-items-start">
@@ -257,10 +261,12 @@
     </div>
 </div>
 
-<script>
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
     let selectedMeal = null;
     let currentQuantity = 1;
     const GST_RATE = 0.05;
+    const preselectedMealId = /*[[${preselectedMealId}]]*/ null;
 
     function selectMeal(element) {
         // Remove selected class from all meals
@@ -364,6 +370,18 @@
         // Submit form
         document.getElementById('mealOrderForm').submit();
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!preselectedMealId) {
+            return;
+        }
+
+        var preselectedCard = document.querySelector('.meal-card[data-id="' + preselectedMealId + '"]');
+        if (preselectedCard) {
+            selectMeal(preselectedCard);
+        }
+    });
 </script>
+</th:block>
 </body>
 </html>

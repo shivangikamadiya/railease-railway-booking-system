@@ -206,7 +206,7 @@ public class BookingController {
                 log.warn("Payment validation failed for ticket: {}", paymentDTO.getTicketId());
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Invalid payment details. Please check and try again.");
-                return "redirect:/booking/confirmation/" + paymentDTO.getTicketId();
+                return "redirect:/booking/payment/" + paymentDTO.getTicketId();
             }
 
             Ticket ticket = paymentService.processPayment(paymentDTO);
@@ -222,7 +222,7 @@ public class BookingController {
         } catch (Exception e) {
             log.error("Payment failed for ticket: {}, error: {}", paymentDTO.getTicketId(), e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/booking/confirmation/" + paymentDTO.getTicketId();
+            return "redirect:/booking/payment/" + paymentDTO.getTicketId();
         }
     }
 

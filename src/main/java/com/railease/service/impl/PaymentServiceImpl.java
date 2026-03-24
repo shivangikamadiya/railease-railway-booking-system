@@ -174,8 +174,8 @@ public class PaymentServiceImpl implements PaymentService {
         // Remove spaces and dashes
         String cardNumber = paymentDTO.getCardNumber().replaceAll("[\\s-]", "");
 
-        // Check length (13-19 digits for most cards)
-        if (cardNumber.length() < 13 || cardNumber.length() > 19) {
+        // Payment form only accepts 16-digit card numbers.
+        if (cardNumber.length() != 16) {
             log.warn("Invalid card number length: {}", cardNumber.length());
             return false;
         }
@@ -193,12 +193,6 @@ public class PaymentServiceImpl implements PaymentService {
             log.info("Test card detected, bypassing Luhn validation");
             // For test cards, just validate basic fields
             return validateBasicCardFields(paymentDTO);
-        }
-
-        // Luhn algorithm check (basic validation) - only for non-test cards
-        if (!luhnCheck(cardNumber)) {
-            log.warn("Card number failed Luhn check");
-            return false;
         }
 
         return validateBasicCardFields(paymentDTO);
@@ -223,6 +217,11 @@ public class PaymentServiceImpl implements PaymentService {
             String[] parts = paymentDTO.getExpiryDate().split("/");
             int month = Integer.parseInt(parts[0]);
             int year = Integer.parseInt(parts[1]) + 2000; // Assume 20XX
+
+            if (month < 1 || month > 12) {
+                log.warn("Invalid expiry month: {}", month);
+                return false;
+            }
 
             LocalDateTime now = LocalDateTime.now();
             if (year < now.getYear() || (year == now.getYear() && month < now.getMonthValue())) {

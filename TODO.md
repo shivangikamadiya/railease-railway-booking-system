@@ -1,11 +1,18 @@
-# RailEase Ticket Booking Fix - ticket_price NPE
+# E-Pantry Service - Restrict to Booked Tickets
 
-## Status: [IN PROGRESS]
+## Current Work
+Make E-pantry work only for users with confirmed tickets. Add backend validation in MealServiceImpl.orderMeal().
 
-### 1. [ ] Create TODO.md ✅
-### 2. [ ] Edit Train.java - Remove ticketPrice field
-### 3. [ ] Edit BookingServiceImpl.java - Replace calculateBaseFare() with strict class lookup
-### 4. [ ] Restart Spring Boot: mvn spring-boot:run
-### 5. [ ] Test workflow: login → view-trains → details → form → confirm → payment → success
-### 6. [ ] Verify fares in DB (run sql/fix-train-fares.sql if needed)
-### 7. [ ] Mark complete
+## Steps
+- [ ] 1. Create TODO.md ✅
+- [ ] 2. Edit src/main/java/com/railease/service/impl/MealServiceImpl.java:
+  - Add ticket status validation (must be CONFIRMED)
+  - Add future journey date check
+  - Add train matching check
+- [ ] 3. Test: Try ordering with confirmed vs cancelled ticket
+- [ ] 4. Mark complete
+
+## Key Details
+- File: MealServiceImpl.java orderMeal() method (around line 131)
+- Valid ticketStatus: CONFIRMED only
+- Add after existing ticket ownership chec![img.png](img.png)k (line ~147)

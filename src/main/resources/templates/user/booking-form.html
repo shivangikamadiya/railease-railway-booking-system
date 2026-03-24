@@ -37,7 +37,6 @@
                         <!-- Booking Form -->
                         <form th:action="@{/booking/confirm}" method="post" id="bookingForm">
                             <input type="hidden" name="trainNo" th:value="${train.trainNo}">
-                            <input type="hidden" name="classType" id="hiddenClassType" th:value="${classType}">
 
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -64,13 +63,13 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-4 mb-3">
+                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-bold">Class *</label>
                                     <select class="form-select" name="classType" id="classType" required onchange="updateFare()">
                                         <option value="">Select Class</option>
-                                        <option value="AC">AC</option>
-                                        <option value="SLEEPER">Sleeper</option>
-                                        <option value="GENERAL">General</option>
+                                        <option value="AC" th:selected="${classType == 'AC'}">AC</option>
+                                        <option value="SLEEPER" th:selected="${classType == 'SLEEPER'}">Sleeper</option>
+                                        <option value="GENERAL" th:selected="${classType == 'GENERAL'}">General</option>
                                     </select>
                                 </div>
 
@@ -82,7 +81,8 @@
 
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-bold">Journey Date *</label>
-                                    <input type="date" class="form-control" name="journeyDate" id="journeyDate" required>
+                                    <input type="date" class="form-control" name="journeyDate" id="journeyDate"
+                                           th:value="${journeyDate}" required>
                                 </div>
                             </div>
 
@@ -148,14 +148,6 @@
 
         // Set default values when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Get classType from the hidden input field which is set by Thymeleaf
-            var classType = document.getElementById('hiddenClassType').value;
-            
-            if (classType) {
-                var selectElement = document.getElementById('classType');
-                selectElement.value = classType;
-            }
-            
             // Set the journey date from the parameter or default to today
             var journeyDate = /*[[${journeyDate}]]*/ null;
             var dateInput = document.getElementById('journeyDate');

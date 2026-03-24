@@ -301,46 +301,6 @@
   </div>
 </div>
 
-<!-- Booking Selection Modal -->
-<div class="modal fade" id="bookingSelectModal" tabindex="-1" aria-labelledby="bookingSelectModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="bookingSelectModalLabel">
-          <i class="bi bi-ticket-detailed me-2"></i>Select Booking for Meal
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p class="text-muted">Please select one of your active bookings to order this meal:</p>
-        <div class="list-group" id="bookingList">
-          <a href="#" th:each="ticket : ${activeTickets}" 
-             th:onclick="'selectBooking(\'' + ${ticket.ticketId} + '\')'"
-             class="list-group-item list-group-item-action">
-            <div class="d-flex w-100 justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1" th:text="${ticket.train.trainName}">Train Name</h6>
-                <p class="mb-1 text-muted small">
-                  <i class="bi bi-geo-alt me-1"></i>
-                  <span th:text="${ticket.sourceStation}">Source</span> → 
-                  <span th:text="${ticket.destinationStation}">Destination</span>
-                </p>
-              </div>
-              <div class="text-end">
-                <small class="text-muted" th:text="${#temporals.format(ticket.journeyDate, 'dd MMM')}">Date</small><br>
-                <small class="fw-bold text-primary" th:text="${ticket.ticketId}">TK123</small>
-              </div>
-            </div>
-          </a>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div layout:fragment="scripts">
   <script th:inline="javascript">
     var activeTicketsCount = /*[[${#lists.size(activeTickets)}]]*/ 0;
@@ -348,28 +308,11 @@
     function orderMeal(mealId) {
       if (activeTicketsCount === 0) {
         alert('You need an active booking to order meals. Please book a ticket first.');
-        window.location.href = '/user/view-trains';
+        window.location.href = /*[[@{/user/view-trains}]]*/ '/user/view-trains';
         return;
       }
-      
-      if (activeTicketsCount === 1) {
-        // Get the single ticket ID
-        var ticketId = /*[[${activeTickets != null and not #lists.isEmpty(activeTickets) ? activeTickets[0].ticketId : ''}]]*/ '';
-        if (ticketId) {
-          window.location.href = '/user/meal-order/' + ticketId;
-        } else {
-          alert('Unable to process your meal order. Please try again.');
-        }
-        return;
-      }
-      
-      // Show modal to select booking if multiple active bookings exist
-      var modal = new bootstrap.Modal(document.getElementById('bookingSelectModal'));
-      modal.show();
-    }
-    
-    function selectBooking(ticketId) {
-      window.location.href = '/user/meal-order/' + ticketId;
+
+      window.location.href = /*[[@{/user/meal-access}]]*/ '/user/meal-access' + '?mealId=' + mealId;
     }
   </script>
 </div>

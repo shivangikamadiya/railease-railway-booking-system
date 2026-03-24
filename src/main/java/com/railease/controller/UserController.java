@@ -168,6 +168,7 @@ public class UserController {
             model.addAttribute("activeBookings", activeBookings);
             model.addAttribute("pastBookings", pastBookings);
             model.addAttribute("cancelledBookings", cancelledBookings);
+            model.addAttribute("today", LocalDate.now());
             model.addAttribute("activeUser", user);
 
             log.info("Loaded {} total bookings for user", allBookings.size());
@@ -305,8 +306,63 @@ public class UserController {
         return "user/meal-menu";
     }
 
+    @GetMapping("/meal-access")
+    public String mealAccess(@RequestParam(required = false) Long mealId,
+                             HttpSession session,
+                             Model model) {
+        User user = (User) session.getAttribute("activeUser");
+        if (user == null) return "redirect:/login";
+
+        model.addAttribute("activeUser", user);
+        model.addAttribute("mealId", mealId);
+        return "user/meal-access";
+    }
+
+    @PostMapping("/meal-access")
+    public String validateMealTicket(@RequestParam String ticketId,
+                                     @RequestParam(required = false) Long mealId,
+                                     HttpSession session,
+                                     RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("activeUser");
+        if (user == null) return "redirect:/login";
+
+        try {
+            Ticket ticket = bookingService.getTicketById(ticketId.trim());
+
+            if (!ticket.getUser().getUserId().equals(user.getUserId())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "This Ticket ID does not belong to your account.");
+                if (mealId != null) {
+                    redirectAttributes.addAttribute("mealId", mealId);
+                }
+                return "redirect:/user/meal-access";
+            }
+
+            if (!isEligibleForMealOrder(ticket)) {
+                redirectAttributes.addFlashAttribute("errorMessage", "E-pantry is available only for confirmed upcoming journeys.");
+                if (mealId != null) {
+                    redirectAttributes.addAttribute("mealId", mealId);
+                }
+                return "redirect:/user/meal-access";
+            }
+
+            if (mealId != null) {
+                return "redirect:/user/meal-order/" + ticket.getTicketId() + "?mealId=" + mealId;
+            }
+
+            return "redirect:/user/meal-order/" + ticket.getTicketId();
+        } catch (Exception e) {
+            log.error("Meal access validation failed: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid Ticket ID. Please enter a valid confirmed ticket.");
+            if (mealId != null) {
+                redirectAttributes.addAttribute("mealId", mealId);
+            }
+            return "redirect:/user/meal-access";
+        }
+    }
+
     @GetMapping("/meal-order/{ticketId}")
     public String mealOrderForm(@PathVariable String ticketId,
+                                @RequestParam(required = false) Long mealId,
                                 HttpSession session,
                                 Model model) {
         User user = (User) session.getAttribute("activeUser");
@@ -316,6 +372,10 @@ public class UserController {
             Ticket ticket = bookingService.getTicketById(ticketId);
 
             if (!ticket.getUser().getUserId().equals(user.getUserId())) {
+                return "redirect:/user/my-bookings";
+            }
+
+            if (!isEligibleForMealOrder(ticket)) {
                 return "redirect:/user/my-bookings";
             }
 
@@ -331,6 +391,7 @@ public class UserController {
             model.addAttribute("ticket", ticket);
             model.addAttribute("meals", meals);
             model.addAttribute("stations", stations);
+            model.addAttribute("preselectedMealId", mealId);
             model.addAttribute("activeUser", user);
 
         } catch (Exception e) {
@@ -458,5 +519,12 @@ public class UserController {
         model.addAttribute("activeUser", user);
 
         return "user/train-details";
+    }
+
+    private boolean isEligibleForMealOrder(Ticket ticket) {
+        return ticket.getTicketStatus() != null
+                && "CONFIRMED".equals(ticket.getTicketStatus().name())
+                && ticket.getJourneyDate() != null
+                && !ticket.getJourneyDate().isBefore(LocalDate.now());
     }
 }

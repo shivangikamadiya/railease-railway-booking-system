@@ -529,66 +529,20 @@
     </div>
 </div>
 
-<!-- Booking Selection Modal -->
-<div class="modal fade" id="bookingSelectModal" tabindex="-1" aria-labelledby="bookingSelectModalLabel" aria-hidden="true" th:if="${not #lists.isEmpty(activeTickets)}">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookingSelectModalLabel">Select Booking for Meal Order</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Please select a booking to order your meal:</p>
-                <div class="list-group">
-                    <a href="#" th:each="ticket : ${activeTickets}" 
-                       th:onclick="'selectBooking(\'' + ${ticket.ticketId} + '\')'"
-                       class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1" th:text="${ticket.train.trainName}">Train Name</h6>
-                            <small th:text="${ticket.ticketId}">TK123456</small>
-                        </div>
-                        <p class="mb-1">
-                            <span th:text="${ticket.sourceStation}">Source</span> → 
-                            <span th:text="${ticket.destinationStation}">Destination</span>
-                        </p>
-                        <small th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">Journey Date</small>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
     function orderMeal(mealId) {
-        // Check if user has active bookings first
         var activeTicketsCount = /*[[${activeTickets != null ? activeTickets.size() : 0}]]*/ 0;
         
         if (activeTicketsCount === 0) {
             alert('You need an active booking to order meals. Please book a ticket first.');
-            window.location.href = '/user/view-trains';
+            window.location.href = /*[[@{/user/view-trains}]]*/ '/user/view-trains';
             return;
         }
-        
-        // If only one active booking, go directly to meal order
-        if (activeTicketsCount === 1) {
-            var ticketId = /*[[${activeTickets != null and not #lists.isEmpty(activeTickets) ? activeTickets[0].ticketId : ''}]]*/ '';
-            if (ticketId) {
-                window.location.href = '/user/meal-order/' + ticketId;
-            } else {
-                window.location.href = '/user/meal-menu';
-            }
-            return;
-        }
-        
-        // Show modal to select booking if multiple active bookings exist
-        var modal = new bootstrap.Modal(document.getElementById('bookingSelectModal'));
-        modal.show();
-    }
-    
-    function selectBooking(ticketId) {
-        window.location.href = '/user/meal-order/' + ticketId;
+
+        window.location.href = /*[[@{/user/meal-access}]]*/ '/user/meal-access' + '?mealId=' + mealId;
     }
 </script>
+</th:block>
 </body>
 </html>

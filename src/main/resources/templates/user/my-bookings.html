@@ -74,7 +74,7 @@
                                        class="btn btn-sm btn-outline-success" title="Download Ticket">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED'}"
+                                    <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED' and !ticket.journeyDate.isBefore(today)}"
                                        th:href="@{/user/meal-order/{id}(id=${ticket.ticketId})}"
                                        class="btn btn-sm btn-outline-warning" title="Order Meal">
                                         <i class="fas fa-utensils"></i>
@@ -97,7 +97,7 @@
         $(document).ready(function() {
             $('.datatable').DataTable({
                 pageLength: 10,
-                order: [[7, 'desc']],
+                order: [ [7, 'desc'] ],
                 language: {
                     search: "Search bookings:",
                     lengthMenu: "Show _MENU_ bookings per page"

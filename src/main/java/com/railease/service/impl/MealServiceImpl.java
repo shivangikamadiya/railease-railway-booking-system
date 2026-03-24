@@ -1,5 +1,6 @@
 package com.railease.service.impl;
 
+import com.railease.constants.TicketStatus;
 import com.railease.dto.MealDTO;
 import com.railease.entity.Meal;
 import com.railease.entity.MealOrder;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -124,7 +126,12 @@ public class MealServiceImpl implements MealService {
     @Override
     public List<Meal> getMealsByTrain(Integer trainNo) {
         log.info("Fetching meals for train: {}", trainNo);
-        return mealRepository.findMealsByTrainNo(trainNo);
+        List<Meal> meals = mealRepository.findMealsByTrainNo(trainNo);
+        if (meals.isEmpty()) {
+            log.warn("No train-specific meals mapped for train {}. Falling back to available meals.", trainNo);
+            return mealRepository.findByAvailabilityStatusTrue();
+        }
+        return meals;
     }
 
     @Override
@@ -148,9 +155,17 @@ public class MealServiceImpl implements MealService {
             throw new RuntimeException("Ticket does not belong to this user");
         }
 
+        if (ticket.getTicketStatus() != TicketStatus.CONFIRMED) {
+            throw new RuntimeException("E-pantry is available only for confirmed tickets");
+        }
+
+        if (ticket.getJourneyDate() == null || ticket.getJourneyDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("E-pantry can be ordered only for upcoming journeys");
+        }
+
         Meal meal = getMealById(mealId);
 
-        if (!meal.getAvailabilityStatus()) {
+        if (!Boolean.TRUE.equals(meal.getAvailabilityStatus()) || !Boolean.TRUE.equals(meal.getIsAvailable())) {
             throw new RuntimeException("Meal is not available");
         }
 

@@ -251,9 +251,9 @@
                     <input type="hidden" name="paymentMethod" id="paymentMethod" value="CARD">
 
                     <!-- Error Message -->
-                    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show mb-4">
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        <span th:text="${session.errorMessage} ?: 'Payment failed. Please try again.'">Payment failed</span>
+                        <span th:text="${errorMessage}">Payment failed. Please try again.</span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
 
@@ -316,7 +316,9 @@
                                     <span class="input-icon"><i class="bi bi-credit-card"></i></span>
                                     <input type="text" class="form-control ps-5" id="cardNumber"
                                            name="cardNumber" placeholder="Card Number"
-                                           maxlength="19" oninput="formatCardNumber(this); updateCardPreview()">
+                                           maxlength="19" inputmode="numeric" autocomplete="cc-number"
+                                           pattern="[0-9 ]{19}"
+                                           oninput="this.value=this.value.replace(/\D/g,'').slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim(); updateCardPreview();">
                                     <label for="cardNumber">Card Number</label>
                                 </div>
                             </div>
@@ -333,7 +335,9 @@
                                 <div class="form-floating">
                                     <input type="text" class="form-control" id="expiryDate"
                                            name="expiryDate" placeholder="MM/YY"
-                                           maxlength="5" oninput="formatExpiry(this); updateCardPreview()">
+                                           maxlength="5" inputmode="numeric" autocomplete="cc-exp"
+                                           pattern="(0[1-9]|1[0-2])\/\d{2}"
+                                           oninput="let v=this.value.replace(/\D/g,'').slice(0,4); this.value=v.length>2 ? v.slice(0,2)+'/'+v.slice(2) : v; updateCardPreview();">
                                     <label for="expiryDate">Expiry Date (MM/YY)</label>
                                 </div>
                             </div>
@@ -342,7 +346,8 @@
                                     <span class="input-icon"><i class="bi bi-lock"></i></span>
                                     <input type="password" class="form-control ps-5" id="cvv"
                                            name="cvv" placeholder="CVV"
-                                           maxlength="3" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                           maxlength="3" inputmode="numeric" autocomplete="cc-csc"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0, 3)">
                                     <label for="cvv">CVV</label>
                                 </div>
                             </div>
@@ -467,23 +472,12 @@
     }
 
     function formatCardNumber(input) {
-        // Remove all non-digits
-        let value = input.value.replace(/\D/g, '');
-
-        // Add space after every 4 digits
-        let formatted = '';
-        for (let i = 0; i < value.length; i++) {
-            if (i > 0 && i % 4 === 0) {
-                formatted += ' ';
-            }
-            formatted += value[i];
-        }
-
-        input.value = formatted;
+        const digits = input.value.replace(/\D/g, '').slice(0, 16);
+        input.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
     }
 
     function formatExpiry(input) {
-        let value = input.value.replace(/\D/g, '');
+        const value = input.value.replace(/\D/g, '').slice(0, 4);
 
         if (value.length >= 2) {
             input.value = value.slice(0, 2) + '/' + value.slice(2, 4);
@@ -515,21 +509,21 @@
         let errorMessage = '';
 
         if (currentMethod === 'CARD') {
-            let cardNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
-            let cardHolder = document.getElementById('cardHolderName').value;
-            let expiry = document.getElementById('expiryDate').value;
-            let cvv = document.getElementById('cvv').value;
+            const cardNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
+            const cardHolder = document.getElementById('cardHolderName').value.trim();
+            const expiry = document.getElementById('expiryDate').value;
+            const cvv = document.getElementById('cvv').value;
 
-            if (cardNumber.length < 13) {
+            if (cardNumber.length !== 16) {
                 isValid = false;
-                errorMessage = 'Please enter a valid card number';
+                errorMessage = 'Please enter a 16-digit card number';
             } else if (cardHolder.length < 3) {
                 isValid = false;
                 errorMessage = 'Please enter card holder name';
-            } else if (!expiry.match(/^\d{2}\/\d{2}$/)) {
+            } else if (!isValidExpiryDate(expiry)) {
                 isValid = false;
                 errorMessage = 'Please enter valid expiry date (MM/YY)';
-            } else if (cvv.length < 3) {
+            } else if (!/^\d{3}$/.test(cvv)) {
                 isValid = false;
                 errorMessage = 'Please enter valid CVV';
             }
@@ -552,6 +546,21 @@
             alert(errorMessage);
         }
     });
+
+    function isValidExpiryDate(expiry) {
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+            return false;
+        }
+
+        const [monthText, yearText] = expiry.split('/');
+        const month = Number.parseInt(monthText, 10);
+        const year = 2000 + Number.parseInt(yearText, 10);
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        return year > currentYear || (year === currentYear && month >= currentMonth);
+    }
 </script>
 </body>
 </html>

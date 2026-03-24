@@ -47,13 +47,14 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         Train train = trainRepository.findById(trainNo)
                 .orElseThrow(() -> new RuntimeException("Train not found with number: " + trainNo));
+        String normalizedClassType = normalizeClassType(classType);
 
-        int availableSeats = getAvailableSeats(trainNo, classType, journeyDate);
+        int availableSeats = getAvailableSeats(trainNo, normalizedClassType, journeyDate);
         if (availableSeats < numberOfSeats) {
             throw new RuntimeException("Only " + availableSeats + " seats available.");
         }
 
-        double baseFare = resolveClassFare(train, classType) * numberOfSeats;
+        double baseFare = resolveClassFare(train, normalizedClassType) * numberOfSeats;
         double totalFare = baseFare + (baseFare * GST_RATE);
 
         Ticket ticket = Ticket.builder()
@@ -66,7 +67,7 @@ public class BookingServiceImpl implements BookingService {
                 .passengerName(passengerName)
                 .passengerAge(passengerAge)
                 .passengerGender(passengerGender)
-                .classType(classType != null ? classType.toUpperCase() : "GENERAL")
+                .classType(normalizedClassType)
                 .numberOfSeats(numberOfSeats)
                 .totalFare(totalFare)
                 .ticketStatus(TicketStatus.PENDING)
@@ -164,15 +165,16 @@ public class BookingServiceImpl implements BookingService {
     public int getAvailableSeats(Integer trainNo, String classType, LocalDate journeyDate) {
         Train train = trainRepository.findById(trainNo)
                 .orElseThrow(() -> new RuntimeException("Train not found with number: " + trainNo));
+        String normalizedClassType = normalizeClassType(classType);
 
-        int totalSeats = switch (classType != null ? classType.toUpperCase() : "GENERAL") {
+        int totalSeats = switch (normalizedClassType) {
             case "AC" -> train.getAcSeats() != null ? train.getAcSeats() : 0;
             case "SLEEPER" -> train.getSleeperSeats() != null ? train.getSleeperSeats() : 0;
             case "GENERAL" -> train.getGeneralSeats() != null ? train.getGeneralSeats() : 0;
             default -> train.getAvailableSeats() != null ? train.getAvailableSeats() : 0;
         };
 
-        Long bookedSeats = ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, classType);
+        Long bookedSeats = ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, normalizedClassType);
         return Math.max(0, totalSeats - (bookedSeats != null ? bookedSeats.intValue() : 0));
     }
 
@@ -361,7 +363,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public Long getBookedSeatsCount(Integer trainNo, LocalDate journeyDate, String classType) {
-        return ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, classType);
+        return ticketRepository.countBookedSeatsByTrainAndDateAndClass(trainNo, journeyDate, normalizeClassType(classType));
     }
 
     @Override
@@ -390,18 +392,31 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private double resolveClassFare(Train train, String classType) {
-        String type = classType != null ? classType.toUpperCase() : "GENERAL";
-        Double fare = switch (type) {
+        String normalizedClassType = normalizeClassType(classType);
+        Double fare = switch (normalizedClassType) {
             case "AC" -> train.getAcFare();
             case "SLEEPER" -> train.getSleeperFare();
             case "GENERAL" -> train.getGeneralFare();
-            default -> train.getGeneralFare();
+            default -> throw new RuntimeException("Unsupported class type: " + normalizedClassType);
         };
 
         if (fare == null || fare <= 0) {
-            throw new RuntimeException("Fare not configured for class: " + type);
+            throw new RuntimeException("Fare not configured for class: " + normalizedClassType);
         }
         return fare;
+    }
+
+    private String normalizeClassType(String classType) {
+        if (classType == null || classType.isBlank()) {
+            throw new RuntimeException("Seat class selection is required.");
+        }
+
+        return switch (classType.trim().toUpperCase()) {
+            case "AC", "AC_SEATS", "AC-SEATS" -> "AC";
+            case "SLEEPER", "SLEEPER_SEATS", "SLEEPER-SEATS" -> "SLEEPER";
+            case "GENERAL", "GENERAL_SEATS", "GENERAL-SEATS" -> "GENERAL";
+            default -> throw new RuntimeException("Unsupported class type: " + classType);
+        };
     }
 
     private RefundStatusDTO buildRefundStatus(Ticket ticket) {

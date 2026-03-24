@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -57,6 +57,10 @@ public class MealController {
 
             // Verify ticket belongs to user
             if (!ticket.getUser().getUserId().equals(user.getUserId())) {
+                return "redirect:/user/my-bookings";
+            }
+
+            if (!isEligibleForMealOrder(ticket)) {
                 return "redirect:/user/my-bookings";
             }
 
@@ -166,5 +170,12 @@ public class MealController {
         }
 
         return "redirect:/user/my-meal-orders";
+    }
+
+    private boolean isEligibleForMealOrder(Ticket ticket) {
+        return ticket.getTicketStatus() != null
+                && "CONFIRMED".equals(ticket.getTicketStatus().name())
+                && ticket.getJourneyDate() != null
+                && !ticket.getJourneyDate().isBefore(LocalDate.now());
     }
 }

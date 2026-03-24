@@ -91,10 +91,10 @@
                                     </td>
                                     <td>₹<span th:text="${train.generalFare}">2500</span></td>
                                     <td>
-                                        <a th:href="@{/user/train-details/{id}(id=${train.trainNo}, journeyDate=${param.journeyDate})}"
+                                       <!-- <a th:href="@{/user/train-details/{id}(id=${train.trainNo}, journeyDate=${param.journeyDate})}"
                                            class="btn btn-sm btn-outline-info mb-1 w-100">
                                             <i class="fas fa-eye"></i> Details
-                                        </a>
+                                        </a> -->
                                         <a th:href="@{/user/book/{id}(id=${train.trainNo}, classType='AC', journeyDate=${param.journeyDate})}"
                                            class="btn btn-sm btn-success w-100">
                                             <i class="fas fa-ticket-alt"></i> Book
@@ -116,15 +116,17 @@
     <script th:src="@{/webjars/datatables/1.13.6/js/dataTables.bootstrap5.min.js}"></script>
     <script>
         $(document).ready(function() {
-            $('.datatable').DataTable({
-                pageLength: 10,
-                order: [[0, 'asc']],
-                language: {
-                    search: "Search trains:",
-                    lengthMenu: "Show _MENU_ trains per page",
-                    info: "Showing _START_ to _END_ of _TOTAL_ trains"
-                }
-            });
+            if ($.fn.DataTable) {
+                $('.datatable').DataTable({
+                    pageLength: 10,
+                    order: [ [0, 'asc'] ],
+                    language: {
+                        search: "Search trains:",
+                        lengthMenu: "Show _MENU_ trains per page",
+                        info: "Showing _START_ to _END_ of _TOTAL_ trains"
+                    }
+                });
+            }
         });
     </script>
 </div>

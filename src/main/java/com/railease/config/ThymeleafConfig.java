@@ -29,6 +29,7 @@ public class ThymeleafConfig {
         templateEngine.setTemplateResolver(templateResolver());
         templateEngine.addDialect(new Java8TimeDialect());
         templateEngine.addDialect(new LayoutDialect());
+
         return templateEngine;
     }
 
