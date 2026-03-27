@@ -1,20 +1,29 @@
 package com.railease.service.impl;
 
-import com.railease.entity.Ticket;
+import com.railease.constants.TicketStatus;
+import com.railease.dto.CancellationRuleDTO;
+import com.railease.entity.CancellationRule;
 import com.railease.entity.MealOrder;
-import com.railease.repository.TicketRepository;
+import com.railease.entity.Ticket;
+import com.railease.repository.CancellationRuleRepository;
 import com.railease.repository.MealOrderRepository;
+import com.railease.repository.TicketRepository;
 import com.railease.service.CancellationService;
+import com.railease.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,16 +33,27 @@ public class CancellationServiceImpl implements CancellationService {
 
     private final TicketRepository ticketRepository;
     private final MealOrderRepository mealOrderRepository;
+    private final CancellationRuleRepository cancellationRuleRepository;
+    private final EmailService emailService;
 
     @Override
     public List<Ticket> getTicketCancellationRequests() {
-        log.info("Fetching ticket cancellation requests");
         return ticketRepository.findCancellationRequests();
     }
 
     @Override
+    public List<Ticket> getTicketCancellationHistory(String refundStatus, Long userId, String ticketId) {
+        return ticketRepository.findAllCancellationHistory().stream()
+                .filter(ticket -> refundStatus == null || refundStatus.isBlank()
+                        || refundStatus.equalsIgnoreCase(ticket.getRefundStatus()))
+                .filter(ticket -> userId == null || ticket.getUser().getUserId().equals(userId))
+                .filter(ticket -> ticketId == null || ticketId.isBlank()
+                        || ticket.getTicketId().toLowerCase().contains(ticketId.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<MealOrder> getMealCancellationRequests() {
-        log.info("Fetching meal cancellation requests");
         return mealOrderRepository.findByRefundStatus("PENDING");
     }
 
@@ -42,89 +62,95 @@ public class CancellationServiceImpl implements CancellationService {
         Map<String, Object> result = new HashMap<>();
         result.put("ticketRequests", getTicketCancellationRequests());
         result.put("mealRequests", getMealCancellationRequests());
-        result.put("totalRequests",
-                getTicketCancellationRequests().size() +
-                        getMealCancellationRequests().size());
+        result.put("totalRequests", getTicketCancellationRequests().size() + getMealCancellationRequests().size());
         return result;
     }
 
     @Override
-    public Ticket approveTicketCancellation(Long ticketId, Double refundPercentage) {
-        log.info("Approving ticket cancellation for ticket: {} with refund: {}%", ticketId, refundPercentage);
-
-        // FIXED: ticketId is Long, but repository might expect String
-        Ticket ticket = ticketRepository.findById(String.valueOf(ticketId))  // Convert Long to String
+    public Ticket approveTicketCancellation(String ticketId) {
+        Ticket ticket = ticketRepository.findByIdWithDetails(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
 
-        LocalDateTime departureTime = ticket.getJourneyDate()
-                .atTime(ticket.getTrain().getDepartureTime());
+        if (!"PENDING".equalsIgnoreCase(ticket.getRefundStatus())) {
+            throw new RuntimeException("Only pending cancellation requests can be approved.");
+        }
 
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime departureTime = ticket.getJourneyDate()
+                .atTime(ticket.getTrain().getDepartureTime() != null ? ticket.getTrain().getDepartureTime() : LocalTime.MIDNIGHT);
+        Double refundPercentage = calculateRefundPercentage(departureTime, now);
         Double refundAmount = ticket.getTotalFare() * (refundPercentage / 100);
 
-        ticket.setTicketStatus(com.railease.constants.TicketStatus.CANCELLED);
+        ticket.setTicketStatus(TicketStatus.CANCELLED);
         ticket.setBookingStatus("CANCELLED");
-        ticket.setRefundStatus("APPROVED");
+        ticket.setCancellationDate(now);
+        ticket.setRefundStatus("PROCESSING");
         ticket.setRefundAmount(refundAmount);
         ticket.setRefundPercentage(refundPercentage);
-        ticket.setRefundProcessedDate(LocalDateTime.now());
+        ticket.setCancellationCharges(ticket.getTotalFare() - refundAmount);
+        ticket.setCancellationDecisionDate(now);
+        ticket.setAdminRemarks("Cancellation approved");
 
-        // Update seat availability
-        Integer availableSeats = ticket.getTrain().getAvailableSeats();
-        ticket.getTrain().setAvailableSeats(availableSeats + ticket.getNumberOfSeats());
+        return ticketRepository.save(ticket);
+    }
+
+    @Override
+    public Ticket completeTicketRefund(String ticketId, String transactionId) {
+        Ticket ticket = ticketRepository.findByIdWithDetails(ticketId)
+                .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
+
+        if (!"PROCESSING".equalsIgnoreCase(ticket.getRefundStatus())) {
+            throw new RuntimeException("Only processing refunds can be completed.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        ticket.setRefundStatus("COMPLETED");
+        ticket.setRefundDate(now);
+        ticket.setRefundProcessedDate(now);
+        ticket.setRefundTransactionId((transactionId == null || transactionId.isBlank())
+                ? "RFN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+                : transactionId.trim());
+        ticket.setAdminRemarks("Refund completed");
 
         Ticket updatedTicket = ticketRepository.save(ticket);
-        log.info("Ticket cancellation approved for ticket: {}, refund amount: ₹{}", ticketId, refundAmount);
+        notifyRefundProcessed(updatedTicket);
         return updatedTicket;
     }
 
     @Override
-    public Ticket rejectTicketCancellation(Long ticketId, String reason) {
-        log.info("Rejecting ticket cancellation for ticket: {}", ticketId);
-
-        // FIXED: ticketId is Long, but repository might expect String
-        Ticket ticket = ticketRepository.findById(String.valueOf(ticketId))
+    public Ticket rejectTicketCancellation(String ticketId, String reason) {
+        Ticket ticket = ticketRepository.findByIdWithDetails(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
 
-        ticket.setRefundStatus("REJECTED");
-        ticket.setCancellationReason(reason);
+        ticket.setBookingStatus("CONFIRMED");
+        ticket.setRefundStatus("DECLINED");
+        ticket.setCancellationDecisionDate(LocalDateTime.now());
+        ticket.setAdminRemarks(reason);
 
-        Ticket updatedTicket = ticketRepository.save(ticket);
-        log.info("Ticket cancellation rejected for ticket: {}", ticketId);
-        return updatedTicket;
+        return ticketRepository.save(ticket);
     }
 
     @Override
     public MealOrder approveMealCancellation(Long orderId, Double refundPercentage) {
-        log.info("Approving meal cancellation for order: {} with refund: {}%", orderId, refundPercentage);
-
         MealOrder order = mealOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Meal order not found with id: " + orderId));
 
         Double refundAmount = order.getTotalPrice() * (refundPercentage / 100);
-
         order.setDeliveryStatus("CANCELLED");
         order.setRefundStatus("APPROVED");
         order.setRefundAmount(refundAmount);
         order.setCancellationDate(LocalDateTime.now());
-
-        MealOrder updatedOrder = mealOrderRepository.save(order);
-        log.info("Meal cancellation approved for order: {}, refund amount: ₹{}", orderId, refundAmount);
-        return updatedOrder;
+        return mealOrderRepository.save(order);
     }
 
     @Override
     public MealOrder rejectMealCancellation(Long orderId, String reason) {
-        log.info("Rejecting meal cancellation for order: {}", orderId);
-
         MealOrder order = mealOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Meal order not found with id: " + orderId));
 
         order.setRefundStatus("REJECTED");
         order.setCancellationReason(reason);
-
-        MealOrder updatedOrder = mealOrderRepository.save(order);
-        log.info("Meal cancellation rejected for order: {}", orderId);
-        return updatedOrder;
+        return mealOrderRepository.save(order);
     }
 
     @Override
@@ -135,74 +161,143 @@ public class CancellationServiceImpl implements CancellationService {
 
     @Override
     public Double calculateRefundPercentage(LocalDateTime departureTime, LocalDateTime cancellationTime) {
+        return findApplicableRule(departureTime, cancellationTime)
+                .map(CancellationRule::getRefundPercentage)
+                .orElse(0.0);
+    }
+
+    @Override
+    public Optional<CancellationRule> findApplicableRule(LocalDateTime departureTime, LocalDateTime cancellationTime) {
         long hoursBeforeDeparture = ChronoUnit.HOURS.between(cancellationTime, departureTime);
+        return ensureDefaultRules().stream()
+                .filter(CancellationRule::getIsActive)
+                .filter(rule -> hoursBeforeDeparture >= rule.getMinHoursBeforeDeparture())
+                .filter(rule -> rule.getMaxHoursBeforeDeparture() == null
+                        || hoursBeforeDeparture < rule.getMaxHoursBeforeDeparture())
+                .findFirst();
+    }
 
-        log.info("Calculating refund for cancellation {} hours before departure", hoursBeforeDeparture);
+    @Override
+    public List<CancellationRule> getCancellationRules() {
+        return cancellationRuleRepository.findAllOrdered();
+    }
 
-        if (hoursBeforeDeparture > 48) {
-            return 90.0;
-        } else if (hoursBeforeDeparture > 24) {
-            return 70.0;
-        } else if (hoursBeforeDeparture > 12) {
-            return 50.0;
-        } else if (hoursBeforeDeparture > 0) {
-            return 20.0;
-        } else {
-            return 0.0;
+    @Override
+    public CancellationRule saveCancellationRule(CancellationRuleDTO ruleDTO) {
+        if (ruleDTO.getMaxHoursBeforeDeparture() != null
+                && ruleDTO.getMaxHoursBeforeDeparture() <= ruleDTO.getMinHoursBeforeDeparture()) {
+            throw new RuntimeException("Maximum hours must be greater than minimum hours.");
         }
+
+        CancellationRule rule = ruleDTO.getId() != null
+                ? cancellationRuleRepository.findById(ruleDTO.getId())
+                .orElseThrow(() -> new RuntimeException("Cancellation rule not found"))
+                : new CancellationRule();
+
+        rule.setMinHoursBeforeDeparture(ruleDTO.getMinHoursBeforeDeparture());
+        rule.setMaxHoursBeforeDeparture(ruleDTO.getMaxHoursBeforeDeparture());
+        rule.setRefundPercentage(ruleDTO.getRefundPercentage());
+        rule.setDescription(ruleDTO.getDescription());
+        rule.setIsActive(ruleDTO.getIsActive() == null || ruleDTO.getIsActive());
+        return cancellationRuleRepository.save(rule);
+    }
+
+    @Override
+    public void deleteCancellationRule(Long ruleId) {
+        cancellationRuleRepository.deleteById(ruleId);
     }
 
     @Override
     public Map<String, Object> getCancellationStatistics() {
         Map<String, Object> stats = new HashMap<>();
-
         List<Ticket> pendingTicketRefunds = ticketRepository.findByRefundStatus("PENDING");
+        List<Ticket> processingTicketRefunds = ticketRepository.findByRefundStatus("PROCESSING");
+        List<Ticket> completedTicketRefunds = ticketRepository.findByRefundStatus("COMPLETED");
         List<MealOrder> pendingMealRefunds = mealOrderRepository.findByRefundStatus("PENDING");
+        List<Ticket> ticketHistory = getTicketCancellationHistory(null, null, null);
 
         stats.put("pendingTicketRefunds", pendingTicketRefunds.size());
+        stats.put("processingTicketRefunds", processingTicketRefunds.size());
+        stats.put("completedTicketRefunds", completedTicketRefunds.size());
         stats.put("pendingMealRefunds", pendingMealRefunds.size());
         stats.put("totalPending", pendingTicketRefunds.size() + pendingMealRefunds.size());
+        stats.put("totalTicketRequests", ticketHistory.size());
 
-        Double totalTicketRefundAmount = pendingTicketRefunds.stream()
-                .mapToDouble(Ticket::getRefundAmount)
+        double totalTicketRefundAmount = ticketHistory.stream()
+                .map(Ticket::getRefundAmount)
+                .filter(amount -> amount != null)
+                .mapToDouble(Double::doubleValue)
                 .sum();
-
-        Double totalMealRefundAmount = pendingMealRefunds.stream()
-                .mapToDouble(MealOrder::getRefundAmount)
+        double totalMealRefundAmount = pendingMealRefunds.stream()
+                .map(MealOrder::getRefundAmount)
+                .filter(amount -> amount != null)
+                .mapToDouble(Double::doubleValue)
                 .sum();
 
         stats.put("totalRefundAmount", totalTicketRefundAmount + totalMealRefundAmount);
-
         return stats;
     }
 
     @Override
     public Ticket processBulkCancellation(List<Long> ticketIds, String reason) {
-        log.info("Processing bulk cancellation for {} tickets", ticketIds.size());
-
         for (Long ticketId : ticketIds) {
-            // FIXED: Convert Long to String for repository lookup
             Ticket ticket = ticketRepository.findById(String.valueOf(ticketId))
                     .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
-
             LocalDateTime departureTime = ticket.getJourneyDate()
-                    .atTime(ticket.getTrain().getDepartureTime());
-
+                    .atTime(ticket.getTrain().getDepartureTime() != null ? ticket.getTrain().getDepartureTime() : LocalTime.MIDNIGHT);
             Double refundPercentage = calculateRefundPercentage(departureTime, LocalDateTime.now());
             Double refundAmount = ticket.getTotalFare() * (refundPercentage / 100);
 
-            ticket.setTicketStatus(com.railease.constants.TicketStatus.CANCELLED);
+            ticket.setTicketStatus(TicketStatus.CANCELLED);
             ticket.setBookingStatus("CANCELLED");
-            ticket.setRefundStatus("APPROVED");
+            ticket.setRefundStatus("PROCESSING");
             ticket.setRefundAmount(refundAmount);
             ticket.setRefundPercentage(refundPercentage);
             ticket.setCancellationReason(reason);
-            ticket.setRefundProcessedDate(LocalDateTime.now());
-
+            ticket.setCancellationDate(LocalDateTime.now());
+            ticket.setCancellationDecisionDate(LocalDateTime.now());
             ticketRepository.save(ticket);
         }
-
-        log.info("Bulk cancellation completed for {} tickets", ticketIds.size());
         return null;
+    }
+
+    private List<CancellationRule> ensureDefaultRules() {
+        List<CancellationRule> existingRules = cancellationRuleRepository.findActiveRules();
+        if (!existingRules.isEmpty()) {
+            return existingRules;
+        }
+
+        List<CancellationRule> defaults = List.of(
+                CancellationRule.builder()
+                        .minHoursBeforeDeparture(24)
+                        .maxHoursBeforeDeparture(null)
+                        .refundPercentage(100.0)
+                        .description("24+ hours before departure")
+                        .isActive(true)
+                        .build(),
+                CancellationRule.builder()
+                        .minHoursBeforeDeparture(12)
+                        .maxHoursBeforeDeparture(24)
+                        .refundPercentage(50.0)
+                        .description("12-24 hours before departure")
+                        .isActive(true)
+                        .build(),
+                CancellationRule.builder()
+                        .minHoursBeforeDeparture(0)
+                        .maxHoursBeforeDeparture(12)
+                        .refundPercentage(0.0)
+                        .description("Less than 12 hours before departure")
+                        .isActive(true)
+                        .build()
+        );
+        return cancellationRuleRepository.saveAll(defaults);
+    }
+
+    private void notifyRefundProcessed(Ticket ticket) {
+        try {
+            emailService.sendCancellationEmail(ticket.getUser(), ticket.getTicketId(), ticket.getRefundAmount());
+        } catch (Exception e) {
+            log.warn("Failed to send refund completion email for {}: {}", ticket.getTicketId(), e.getMessage());
+        }
     }
 }

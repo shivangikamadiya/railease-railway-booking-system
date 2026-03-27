@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Refund Status</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0" th:text="${refundStatus.refundStatusMessage}">Ticket refund status is pending.</h4>
+                        <span class="badge"
+                              th:classappend="${refundStatus.refundStatus == 'PENDING' ? 'bg-warning text-dark' :
+                                               (refundStatus.refundStatus == 'PROCESSING' ? 'bg-info text-dark' :
+                                               (refundStatus.refundStatus == 'COMPLETED' ? 'bg-success' :
+                                               (refundStatus.refundStatus == 'DECLINED' ? 'bg-danger' : 'bg-secondary')))}"
+                              th:text="${refundStatus.refundStatus}">PENDING</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert mb-4"
+                             th:classappend="${refundStatus.refundStatus == 'PENDING' ? 'alert-warning' :
+                                              (refundStatus.refundStatus == 'PROCESSING' ? 'alert-info' :
+                                              (refundStatus.refundStatus == 'COMPLETED' ? 'alert-success' : 'alert-danger'))}"
+                             th:text="${refundStatus.refundStatusMessage}">
+                            Ticket refund status is pending.
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="small text-muted">Ticket ID</div>
+                                    <div class="fw-semibold" th:text="${refundStatus.ticketId}">TK1001</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="small text-muted">Original Fare</div>
+                                    <div class="fw-semibold" th:text="'Rs ' + ${#numbers.formatDecimal(refundStatus.originalFare, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="small text-muted">Refund Amount</div>
+                                    <div class="fw-semibold text-success" th:text="'Rs ' + ${#numbers.formatDecimal(refundStatus.refundAmount, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3">Timeline</h6>
+                        <div class="border rounded p-3 mb-3" th:each="step : ${refundStatus.timeline}">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-semibold">
+                                        <span th:text="${step.stage}">Stage</span>
+                                        <span class="badge ms-2"
+                                              th:classappend="${step.completed} ? 'bg-success' : 'bg-light text-dark'"
+                                              th:text="${step.completed ? 'Done' : 'Pending'}">Done</span>
+                                    </div>
+                                    <div class="small text-muted" th:text="${step.message}">Message</div>
+                                </div>
+                                <div class="small text-muted"
+                                     th:text="${step.timestamp != null ? #temporals.format(step.timestamp, 'dd MMM yyyy HH:mm') : 'Awaiting update'}">
+                                    Awaiting update
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded">
+                                    <div class="small text-muted">Payment Method</div>
+                                    <div class="fw-semibold" th:text="${refundStatus.paymentMethod ?: 'NA'}">UPI</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded">
+                                    <div class="small text-muted">Refund Transaction ID</div>
+                                    <div class="fw-semibold" th:text="${refundStatus.refundTransactionId ?: 'NA'}">RFN123</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a th:href="@{/user/my-bookings}" class="btn btn-outline-secondary">Back To Bookings</a>
+                            <button class="btn btn-outline-primary" onclick="window.print()">Print</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

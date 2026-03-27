@@ -3,225 +3,232 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/admin/admin-layout}">
 <head>
-  <title layout:fragment="title">Cancellation Requests</title>
+    <title layout:fragment="title">Cancellation Management</title>
 </head>
 <body>
 <div layout:fragment="admin-content">
-  <div class="page-header">
-    <h4 class="fw-bold mb-0">
-      <i class="fas fa-undo-alt me-2 text-primary"></i>
-      Cancellation Requests
-    </h4>
-  </div>
- 
-  <!-- Statistics -->
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="stat-card">
-        <h3 class="fw-bold" th:text="${stats.pendingTicketRefunds}">0</h3>
-        <p class="text-muted mb-0">Pending Ticket Cancellations</p>
-      </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1">Ticket Cancellation And Refund Management</h4>
+            <p class="text-muted mb-0">Manage refund rules, pending requests, and cancellation history.</p>
+        </div>
     </div>
-    <div class="col-md-4">
-      <div class="stat-card">
-        <h3 class="fw-bold" th:text="${stats.pendingMealRefunds}">0</h3>
-        <p class="text-muted mb-0">Pending Meal Cancellations</p>
-      </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0"><div class="card-body"><div class="small text-muted">Pending Requests</div><div class="h3 mb-0" th:text="${stats.pendingTicketRefunds}">0</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0"><div class="card-body"><div class="small text-muted">Processing Refunds</div><div class="h3 mb-0" th:text="${stats.processingTicketRefunds}">0</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0"><div class="card-body"><div class="small text-muted">Completed Refunds</div><div class="h3 mb-0" th:text="${stats.completedTicketRefunds}">0</div></div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0"><div class="card-body"><div class="small text-muted">Total Refund Amount</div><div class="h3 mb-0" th:text="'Rs ' + ${#numbers.formatDecimal(stats.totalRefundAmount, 0, 'COMMA', 2, 'POINT')}">Rs 0</div></div></div>
+        </div>
     </div>
-    <div class="col-md-4">
-      <div class="stat-card">
-        <h3 class="fw-bold">₹<span th:text="${#numbers.formatDecimal(stats.totalRefundAmount, 0, 'COMMA', 2, 'POINT')}">0</span></h3>
-        <p class="text-muted mb-0">Total Refund Amount</p>
-      </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Refund Rules</h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/admin/cancellations/rules}" method="post" class="row g-3 mb-4">
+                <input type="hidden" name="id">
+                <div class="col-md-3">
+                    <label class="form-label">Min Hours</label>
+                    <input class="form-control" type="number" name="minHoursBeforeDeparture" min="0" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Max Hours</label>
+                    <input class="form-control" type="number" name="maxHoursBeforeDeparture" min="0">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Refund %</label>
+                    <input class="form-control" type="number" name="refundPercentage" min="0" max="100" step="0.01" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Description</label>
+                    <input class="form-control" type="text" name="description" maxlength="200">
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">Save Rule</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Hours Window</th>
+                        <th>Refund %</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="rule : ${rules}">
+                        <td th:text="${rule.maxHoursBeforeDeparture != null ? rule.minHoursBeforeDeparture + ' - ' + rule.maxHoursBeforeDeparture + ' hrs' : rule.minHoursBeforeDeparture + '+ hrs'}">24+ hrs</td>
+                        <td th:text="${rule.refundPercentage + '%'}">100%</td>
+                        <td th:text="${rule.description}">24+ hours before departure</td>
+                        <td th:text="${rule.isActive ? 'Active' : 'Inactive'}">Active</td>
+                        <td>
+                            <form th:action="@{/admin/cancellations/rules/delete/{ruleId}(ruleId=${rule.id})}" method="post">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Ticket Cancellation Requests -->
-  <div class="card mb-4">
-    <div class="card-header bg-white">
-      <h5 class="mb-0">Ticket Cancellation Requests</h5>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Pending Ticket Cancellation Requests</h5>
+        </div>
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(ticketRequests)}" class="text-muted">No pending requests.</div>
+            <div th:unless="${#lists.isEmpty(ticketRequests)}" class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>User</th>
+                        <th>Journey</th>
+                        <th>Reason</th>
+                        <th>Estimated Refund</th>
+                        <th>Requested On</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="ticket : ${ticketRequests}">
+                        <td th:text="${ticket.ticketId}">TK1001</td>
+                        <td th:text="${ticket.user.fullName + ' (#' + ticket.user.userId + ')'}">User</td>
+                        <td th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy') + ' ' + ticket.train.departureTime}">29 Mar 2026</td>
+                        <td th:text="${ticket.cancellationReason}">Plans changed</td>
+                        <td th:text="'Rs ' + ${#numbers.formatDecimal(ticket.refundAmount != null ? ticket.refundAmount : 0, 0, 'COMMA', 2, 'POINT')}">Rs 0</td>
+                        <td th:text="${#temporals.format(ticket.cancellationRequestedDate, 'dd MMM yyyy HH:mm')}">27 Mar 2026</td>
+                        <td class="d-flex gap-2">
+                            <form th:action="@{/admin/cancellations/ticket/approve}" method="post">
+                                <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                                <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                            </form>
+                            <form th:action="@{/admin/cancellations/ticket/reject}" method="post">
+                                <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                                <input type="hidden" name="reason" value="Cancelled request rejected by admin">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Decline</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-          <tr>
-            <th>Ticket ID</th>
-            <th>User</th>
-            <th>Train</th>
-            <th>Journey Date</th>
-            <th>Departure Time</th>
-            <th>Fare</th>
-            <th>Requested On</th>
-            <th>Refund %</th>
-            <th>Actions</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="ticket : ${ticketRequests}">
-            <td th:text="${ticket.ticketId}">TK123</td>
-            <td th:text="${ticket.user.fullName}">John Doe</td>
-            <td th:text="${ticket.train.trainName}">Rajdhani</td>
-            <td th:text="${#temporals.format(ticket.journeyDate, 'dd-MM-yyyy')}">15-02-2026</td>
-            <td th:text="${ticket.train.departureTime}">16:35</td>
-            <td>₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500</span></td>
-            <td th:text="${#temporals.format(ticket.cancellationRequestedDate, 'dd MMM HH:mm')}">12 Feb 10:30</td>
-            <td>
-              <select class="form-select form-select-sm" th:id="'refundPercent_' + ${ticket.id}">
-                <option value="90">90% (Before 48h)</option>
-                <option value="70">70% (24-48h)</option>
-                <option value="50">50% (12-24h)</option>
-                <option value="20">20% (<12h)</option>
-                <option value="0">0% (After departure)</option>
-              </select>
-            </td>
-            <td>
-              <div class="btn-group" role="group">
-                <button class="btn btn-sm btn-success"
-                        onclick="approveTicket([[${ticket.id}]])">
-                  <i class="fas fa-check"></i> Approve
-                </button>
-                <button class="btn btn-sm btn-danger"
-                        onclick="rejectTicket([[${ticket.id}]])">
-                  <i class="fas fa-times"></i> Reject
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr th:if="${#lists.isEmpty(ticketRequests)}">
-            <td colspan="9" class="text-center py-4">
-              <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-              <p class="text-muted">No pending ticket cancellation requests</p>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Processing Refunds</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>User</th>
+                        <th>Refund Amount</th>
+                        <th>Approved On</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="ticket : ${processingHistory}">
+                        <td th:text="${ticket.ticketId}">TK1001</td>
+                        <td th:text="${ticket.user.fullName}">User</td>
+                        <td th:text="'Rs ' + ${#numbers.formatDecimal(ticket.refundAmount != null ? ticket.refundAmount : 0, 0, 'COMMA', 2, 'POINT')}">Rs 0</td>
+                        <td th:text="${ticket.cancellationDecisionDate != null ? #temporals.format(ticket.cancellationDecisionDate, 'dd MMM yyyy HH:mm') : 'NA'}">27 Mar</td>
+                        <td>
+                            <form th:action="@{/admin/cancellations/ticket/complete}" method="post" class="d-flex gap-2">
+                                <input type="hidden" name="ticketId" th:value="${ticket.ticketId}">
+                                <input type="text" class="form-control form-control-sm" name="transactionId" placeholder="Transaction ID">
+                                <button class="btn btn-sm btn-primary" type="submit">Mark Completed</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(processingHistory)}">
+                        <td colspan="5" class="text-muted">No processing refunds.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Meal Cancellation Requests -->
-  <div class="card">
-    <div class="card-header bg-white">
-      <h5 class="mb-0">Meal Cancellation Requests</h5>
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Cancellation History</h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/admin/cancellations/filter}" method="get" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Refund Status</label>
+                    <select class="form-select" name="refundStatus">
+                        <option value="">All</option>
+                        <option value="PENDING" th:selected="${selectedRefundStatus == 'PENDING'}">Pending</option>
+                        <option value="PROCESSING" th:selected="${selectedRefundStatus == 'PROCESSING'}">Processing</option>
+                        <option value="COMPLETED" th:selected="${selectedRefundStatus == 'COMPLETED'}">Completed</option>
+                        <option value="DECLINED" th:selected="${selectedRefundStatus == 'DECLINED'}">Declined</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">User ID</label>
+                    <input class="form-control" type="number" name="userId" th:value="${selectedUserId}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ticket ID</label>
+                    <input class="form-control" type="text" name="ticketId" th:value="${selectedTicketId}">
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-outline-primary" type="submit">Apply Filters</button>
+                    <a th:href="@{/admin/cancellations}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Ticket</th>
+                        <th>User ID</th>
+                        <th>Requested</th>
+                        <th>Refund Amount</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="ticket : ${history}">
+                        <td th:text="${ticket.ticketId}">TK1001</td>
+                        <td th:text="${ticket.user.userId}">1</td>
+                        <td th:text="${ticket.cancellationRequestedDate != null ? #temporals.format(ticket.cancellationRequestedDate, 'dd MMM yyyy HH:mm') : 'NA'}">27 Mar</td>
+                        <td th:text="${ticket.refundAmount != null ? 'Rs ' + #numbers.formatDecimal(ticket.refundAmount, 0, 'COMMA', 2, 'POINT') : 'NA'}">Rs 0</td>
+                        <td th:text="${ticket.refundStatus ?: 'NA'}">PENDING</td>
+                        <td th:text="${ticket.adminRemarks ?: ticket.cancellationReason ?: 'NA'}">Remarks</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(history)}">
+                        <td colspan="6" class="text-muted">No cancellation history found.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>User</th>
-            <th>Meal</th>
-            <th>Quantity</th>
-            <th>Total Price</th>
-            <th>Ordered On</th>
-            <th>Refund %</th>
-            <th>Actions</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="order : ${mealRequests}">
-            <td th:text="${order.id}">M123</td>
-            <td th:text="${order.user.fullName}">John Doe</td>
-            <td th:text="${order.meal.mealName}">Veg Biryani</td>
-            <td th:text="${order.quantity}">2</td>
-            <td>₹<span th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 2, 'POINT')}">500</span></td>
-            <td th:text="${#temporals.format(order.orderDate, 'dd MMM HH:mm')}">12 Feb 09:15</td>
-            <td>
-              <select class="form-select form-select-sm" th:id="'mealRefundPercent_' + ${order.id}">
-                <option value="90">90% (Before 48h)</option>
-                <option value="70">70% (24-48h)</option>
-                <option value="50">50% (12-24h)</option>
-                <option value="20">20% (<12h)</option>
-                <option value="0">0% (After departure)</option>
-              </select>
-            </td>
-            <td>
-              <div class="btn-group" role="group">
-                <button class="btn btn-sm btn-success"
-                        onclick="approveMeal([[${order.id}]])">
-                  <i class="fas fa-check"></i> Approve
-                </button>
-                <button class="btn btn-sm btn-danger"
-                        onclick="rejectMeal([[${order.id}]])">
-                  <i class="fas fa-times"></i> Reject
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr th:if="${#lists.isEmpty(mealRequests)}">
-            <td colspan="8" class="text-center py-4">
-              <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-              <p class="text-muted">No pending meal cancellation requests</p>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Hidden forms for actions -->
-<form id="approveTicketForm" th:action="@{/admin/cancellations/ticket/approve}" method="post" style="display: none;">
-  <input type="hidden" name="ticketId" id="approveTicketId">
-  <input type="hidden" name="refundPercentage" id="approveTicketPercent">
-</form>
-
-<form id="rejectTicketForm" th:action="@{/admin/cancellations/ticket/reject}" method="post" style="display: none;">
-  <input type="hidden" name="ticketId" id="rejectTicketId">
-  <input type="hidden" name="reason" id="rejectTicketReason">
-</form>
-
-<form id="approveMealForm" th:action="@{/admin/cancellations/meal/approve}" method="post" style="display: none;">
-  <input type="hidden" name="orderId" id="approveMealId">
-  <input type="hidden" name="refundPercentage" id="approveMealPercent">
-</form>
-
-<form id="rejectMealForm" th:action="@{/admin/cancellations/meal/reject}" method="post" style="display: none;">
-  <input type="hidden" name="orderId" id="rejectMealId">
-  <input type="hidden" name="reason" id="rejectMealReason">
-</form>
-
-<div layout:fragment="admin-scripts">
-  <script>
-    function approveTicket(ticketId) {
-        var percentSelect = document.getElementById('refundPercent_' + ticketId);
-        var percent = percentSelect.value;
-
-        document.getElementById('approveTicketId').value = ticketId;
-        document.getElementById('approveTicketPercent').value = percent;
-        document.getElementById('approveTicketForm').submit();
-    }
-
-    function rejectTicket(ticketId) {
-        var reason = prompt('Please enter reason for rejection:');
-        if (reason) {
-            document.getElementById('rejectTicketId').value = ticketId;
-            document.getElementById('rejectTicketReason').value = reason;
-            document.getElementById('rejectTicketForm').submit();
-        }
-    }
-
-    function approveMeal(orderId) {
-        var percentSelect = document.getElementById('mealRefundPercent_' + orderId);
-        var percent = percentSelect.value;
-
-        document.getElementById('approveMealId').value = orderId;
-        document.getElementById('approveMealPercent').value = percent;
-        document.getElementById('approveMealForm').submit();
-    }
-
-    function rejectMeal(orderId) {
-        var reason = prompt('Please enter reason for rejection:');
-        if (reason) {
-            document.getElementById('rejectMealId').value = orderId;
-            document.getElementById('rejectMealReason').value = reason;
-            document.getElementById('rejectMealForm').submit();
-        }
-    }
-  </script>
 </div>
 </body>
 </html>

@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     payment_method VARCHAR(20),
     cancellation_date TIMESTAMP NULL,
     cancellation_reason VARCHAR(500),
+    admin_remarks VARCHAR(500),
     refund_amount DOUBLE,
     refund_percentage DOUBLE,
     refund_status VARCHAR(20),
@@ -139,6 +140,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     cancellation_requested_date DATETIME,
     refund_date DATETIME,
     refund_transaction_id VARCHAR(50),
+    cancellation_decision_date DATETIME,
     cancellation_charges DOUBLE,
     meal_id BIGINT,
     meal_quantity INT,
@@ -149,6 +151,17 @@ CREATE TABLE IF NOT EXISTS tickets (
     INDEX idx_journey_date (journey_date),
     INDEX idx_ticket_status (ticket_status),
     INDEX idx_refund_status (refund_status)
+);
+
+CREATE TABLE IF NOT EXISTS cancellation_rules (
+    rule_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    min_hours_before_departure INT NOT NULL,
+    max_hours_before_departure INT NULL,
+    refund_percentage DOUBLE NOT NULL,
+    description VARCHAR(200),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- ============================================================================

@@ -38,7 +38,11 @@ public interface TicketRepository extends JpaRepository<Ticket, String> {
     List<Ticket> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") TicketStatus status);
 
     // Date-based queries - with eager loading of Train
-    @Query("SELECT t FROM Ticket t LEFT JOIN FETCH t.train WHERE t.user.userId = :userId AND t.journeyDate >= CURRENT_DATE AND t.ticketStatus = 'CONFIRMED'")
+    @Query("SELECT t FROM Ticket t LEFT JOIN FETCH t.train " +
+            "WHERE t.user.userId = :userId " +
+            "AND t.journeyDate >= CURRENT_DATE " +
+            "AND t.ticketStatus = 'CONFIRMED' " +
+            "AND t.bookingStatus = 'CONFIRMED'")
     List<Ticket> findActiveTicketsByUserId(@Param("userId") Long userId);
 
     @Query("SELECT t FROM Ticket t LEFT JOIN FETCH t.train WHERE t.user.userId = :userId AND t.journeyDate < CURRENT_DATE")
@@ -47,7 +51,10 @@ public interface TicketRepository extends JpaRepository<Ticket, String> {
     @Query("SELECT t FROM Ticket t LEFT JOIN FETCH t.train WHERE t.user.userId = :userId AND t.ticketStatus = 'CANCELLED'")
     List<Ticket> findCancelledTicketsByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.user.userId = :userId AND t.journeyDate >= CURRENT_DATE AND t.ticketStatus = 'CONFIRMED'")
+    @Query("SELECT COUNT(t) FROM Ticket t WHERE t.user.userId = :userId " +
+            "AND t.journeyDate >= CURRENT_DATE " +
+            "AND t.ticketStatus = 'CONFIRMED' " +
+            "AND t.bookingStatus = 'CONFIRMED'")
     Long countUpcomingByUserId(@Param("userId") Long userId);
 
     // Seat availability queries
@@ -80,9 +87,20 @@ public interface TicketRepository extends JpaRepository<Ticket, String> {
     @Query("SELECT COUNT(t) FROM Ticket t WHERE t.user.userId = :userId AND t.refundStatus = 'COMPLETED'")
     Long countCompletedRefundsByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT t FROM Ticket t WHERE t.cancellationRequestedDate IS NOT NULL AND t.refundStatus = 'PENDING'")
+    @Query("SELECT t FROM Ticket t " +
+            "LEFT JOIN FETCH t.train " +
+            "LEFT JOIN FETCH t.user " +
+            "WHERE t.cancellationRequestedDate IS NOT NULL AND t.refundStatus = 'PENDING' " +
+            "ORDER BY t.cancellationRequestedDate DESC")
     List<Ticket> findCancellationRequests();
 
     @Query("SELECT t FROM Ticket t WHERE t.refundStatus = :status")
     List<Ticket> findByRefundStatus(@Param("status") String status);
+
+    @Query("SELECT t FROM Ticket t " +
+            "LEFT JOIN FETCH t.train " +
+            "LEFT JOIN FETCH t.user " +
+            "WHERE t.cancellationRequestedDate IS NOT NULL " +
+            "ORDER BY t.cancellationRequestedDate DESC")
+    List<Ticket> findAllCancellationHistory();
 }

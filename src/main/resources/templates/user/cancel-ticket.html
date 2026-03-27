@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title layout:fragment="title">Cancel Ticket</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">Cancel Ticket</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="small text-muted">Ticket ID</div>
+                                    <div class="fw-semibold" th:text="${refundEstimate.ticketId}">TK1001</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="small text-muted">Original Fare</div>
+                                    <div class="fw-semibold" th:text="'Rs ' + ${#numbers.formatDecimal(refundEstimate.originalFare, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-success bg-opacity-10 rounded">
+                                    <div class="small text-muted">Refund Amount</div>
+                                    <div class="fw-semibold text-success" th:text="'Rs ' + ${#numbers.formatDecimal(refundEstimate.refundAmount, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert"
+                             th:classappend="${refundEstimate.isEligible} ? 'alert-success' : 'alert-danger'">
+                            <div class="fw-semibold mb-1" th:text="${refundEstimate.refundPolicy}">24+ hours before departure</div>
+                            <span th:text="${refundEstimate.eligibilityMessage}">Eligibility text</span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="small text-muted">Cancellation Charges</div>
+                            <div class="h5 text-danger"
+                                 th:text="'Rs ' + ${#numbers.formatDecimal(refundEstimate.cancellationCharges, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
+                        </div>
+
+                        <form th:action="@{/cancellation/confirm}" method="post">
+                            <input type="hidden" name="ticketId" th:value="${refundEstimate.ticketId}">
+
+                            <div class="mb-3">
+                                <label class="form-label">Reason For Cancellation</label>
+                                <textarea class="form-control" name="reason" rows="4" maxlength="500" required></textarea>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="refundCheck" required>
+                                <label class="form-check-label" for="refundCheck">
+                                    I have reviewed the refund amount and cancellation charges.
+                                </label>
+                            </div>
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="reviewCheck" required>
+                                <label class="form-check-label" for="reviewCheck">
+                                    I understand this cancellation will be sent for admin approval.
+                                </label>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/user/my-bookings}" class="btn btn-outline-secondary">Back</a>
+                                <button type="submit" class="btn btn-danger"
+                                        th:disabled="${!refundEstimate.isEligible}">
+                                    Confirm Cancellation Request
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

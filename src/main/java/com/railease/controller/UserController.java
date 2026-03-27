@@ -72,9 +72,6 @@ public class UserController {
             }
 
             // Refund stats
-            Map<String, Long> refundStats = bookingService.getUserRefundStats(user.getUserId());
-            Long pendingRefunds = refundStats.getOrDefault("pendingRefunds", 0L);
-
             // Add all to model
             model.addAttribute("totalBookings", totalBookings);
             model.addAttribute("upcomingJourneys", upcomingJourneys);
@@ -85,7 +82,6 @@ public class UserController {
             model.addAttribute("pastBookings", pastBookings);
             model.addAttribute("totalMealOrders", totalMealOrders);
             model.addAttribute("featuredMeals", featuredMeals);
-            model.addAttribute("pendingRefunds", pendingRefunds);
 
             return "user/dashboard";
 
@@ -422,6 +418,21 @@ public class UserController {
         return "user/my-meal-orders";
     }
 
+    @GetMapping("/cancellation-refunds")
+    public String cancellationAndRefunds(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("activeUser");
+        if (user == null) return "redirect:/login";
+
+        try {
+            populateRefundSection(model, user);
+        } catch (Exception e) {
+            log.error("Error loading cancellation and refunds page: {}", e.getMessage());
+            model.addAttribute("errorMessage", "Error loading cancellation and refund details");
+        }
+
+        return "user/cancellation-refunds";
+    }
+
     @GetMapping("/cancel-ticket/{ticketId}")
     public String showCancellationPage(@PathVariable String ticketId,
                                        HttpSession session,
@@ -431,6 +442,9 @@ public class UserController {
 
         try {
             RefundEstimateDTO estimate = bookingService.calculateRefundEstimate(ticketId, user.getUserId());
+            if (!bookingService.isCancellable(ticketId)) {
+                throw new RuntimeException("This ticket is not eligible for cancellation.");
+            }
             model.addAttribute("refundEstimate", estimate);
             model.addAttribute("activeUser", user);
 
@@ -526,5 +540,18 @@ public class UserController {
                 && "CONFIRMED".equals(ticket.getTicketStatus().name())
                 && ticket.getJourneyDate() != null
                 && !ticket.getJourneyDate().isBefore(LocalDate.now());
+    }
+
+    private void populateRefundSection(Model model, User user) {
+        Map<String, Long> refundStats = bookingService.getUserRefundStats(user.getUserId());
+        Long pendingRefunds = refundStats.getOrDefault("pendingRefunds", 0L);
+        Long processingRefunds = refundStats.getOrDefault("processingRefunds", 0L);
+        Long completedRefunds = refundStats.getOrDefault("completedRefunds", 0L);
+
+        model.addAttribute("activeUser", user);
+        model.addAttribute("pendingRefunds", pendingRefunds);
+        model.addAttribute("processingRefunds", processingRefunds);
+        model.addAttribute("completedRefunds", completedRefunds);
+        model.addAttribute("refunds", bookingService.getUserRefunds(user.getUserId()));
     }
 }

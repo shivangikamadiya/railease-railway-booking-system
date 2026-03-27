@@ -1,9 +1,10 @@
 package com.railease.controller;
 
 import com.railease.dto.CancellationRequestDTO;
+import com.railease.dto.CancellationResponseDTO;
+import com.railease.dto.RefundStatusDTO;
 import com.railease.entity.User;
 import com.railease.service.BookingService;
-import com.railease.service.CancellationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
-import javax.validation.Valid;
 
 @Controller
 @RequestMapping("/cancellation")
@@ -20,56 +20,29 @@ import javax.validation.Valid;
 @Slf4j
 public class CancellationController {
 
-    private final CancellationService cancellationService;
     private final BookingService bookingService;
 
-    @GetMapping("/ticket/{ticketId}")
-    public String showCancellationForm(@PathVariable String ticketId,
-                                       HttpSession session,
-                                       Model model) {
+    @PostMapping("/confirm")
+    public String confirmCancellation(@ModelAttribute CancellationRequestDTO request,
+                                      HttpSession session,
+                                      RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("activeUser");
         if (user == null) {
             return "redirect:/login";
         }
 
         try {
-            var ticket = bookingService.getTicketById(ticketId);
-
-            if (!ticket.getUser().getUserId().equals(user.getUserId())) {
-                return "redirect:/user/my-bookings";
-            }
-
-            model.addAttribute("ticket", ticket);
-            model.addAttribute("activeUser", user);
-
-            return "user/cancel-ticket";
+            CancellationResponseDTO response = bookingService.processCancellation(
+                    request.getTicketId(),
+                    user.getUserId(),
+                    request.getReason()
+            );
+            redirectAttributes.addFlashAttribute("successMessage", response.getMessage());
+            return "redirect:/cancellation/status/" + request.getTicketId();
         } catch (Exception e) {
-            log.error("Error showing cancellation form: {}", e.getMessage());
-            return "redirect:/user/my-bookings";
-        }
-    }
-
-    @PostMapping("/initiate")
-    public String initiateCancellation(@Valid @ModelAttribute CancellationRequestDTO request,
-                                       HttpSession session,
-                                       RedirectAttributes redirectAttributes) {
-        User user = (User) session.getAttribute("activeUser");
-        if (user == null) {
-            return "redirect:/login";
-        }
-
-        try {
-            // FIXED: Use getTicketId() or create a new field in DTO
-            String ticketId = request.getTicketId(); // Make sure this field exists in DTO
-
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Cancellation initiated successfully");
-
-            return "redirect:/cancellation/status/" + ticketId;
-        } catch (Exception e) {
-            log.error("Cancellation failed: {}", e.getMessage());
+            log.error("Cancellation failed for {}: {}", request.getTicketId(), e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/cancellation/ticket/" + request.getTicketId();
+            return "redirect:/user/cancel-ticket/" + request.getTicketId();
         }
     }
 
@@ -83,18 +56,12 @@ public class CancellationController {
         }
 
         try {
-            var ticket = bookingService.getTicketById(ticketId);
-
-            if (!ticket.getUser().getUserId().equals(user.getUserId())) {
-                return "redirect:/user/my-bookings";
-            }
-
-            model.addAttribute("ticket", ticket);
+            RefundStatusDTO refundStatus = bookingService.checkRefundStatus(ticketId, user.getUserId());
+            model.addAttribute("refundStatus", refundStatus);
             model.addAttribute("activeUser", user);
-
             return "user/refund-status";
         } catch (Exception e) {
-            log.error("Error fetching refund status: {}", e.getMessage());
+            log.error("Error fetching refund status for {}: {}", ticketId, e.getMessage());
             return "redirect:/user/my-bookings";
         }
     }

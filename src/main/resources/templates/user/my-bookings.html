@@ -4,82 +4,53 @@
       layout:decorate="~{layout/main-layout}">
 <head>
     <title layout:fragment="title">My Bookings</title>
-    <link rel="stylesheet" th:href="@{/webjars/datatables/1.13.6/css/dataTables.bootstrap5.min.css}">
 </head>
 <body>
 <div layout:fragment="content">
-    <div class="container mt-4">
-        <div class="card">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-1">My Bookings</h3>
+                <p class="text-muted mb-0">Active tickets, cancellation requests, refunds, and cancelled history.</p>
+            </div>
+            <a th:href="@{/user/view-trains}" class="btn btn-primary">Book Ticket</a>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white">
-                <h4 class="mb-0"><i class="fas fa-ticket-alt me-2 text-primary"></i>My Bookings</h4>
+                <h5 class="mb-0">Active Confirmed Tickets</h5>
             </div>
             <div class="card-body">
-                <div th:if="${#lists.isEmpty(allBookings)}" class="text-center py-5">
-                    <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
-                    <h5>No bookings found</h5>
-                    <p class="text-muted">You haven't booked any tickets yet.</p>
-                    <a th:href="@{/user/view-trains}" class="btn btn-primary">
-                        <i class="fas fa-train me-2"></i>Browse Trains
-                    </a>
-                </div>
-                <div th:unless="${#lists.isEmpty(allBookings)}" class="table-responsive">
-                    <table class="table table-hover datatable">
+                <div th:if="${#lists.isEmpty(activeBookings)}" class="text-muted">No active confirmed tickets.</div>
+                <div th:unless="${#lists.isEmpty(activeBookings)}" class="table-responsive">
+                    <table class="table align-middle">
                         <thead>
                         <tr>
-                            <th>Ticket ID</th>
+                            <th>Ticket</th>
                             <th>Train</th>
-                            <th>Journey Date</th>
-                            <th>Passenger</th>
-                            <th>Class</th>
-                            <th>Seats</th>
-                            <th>Total Fare</th>
-                            <th>Booking Date</th>
-                            <th>Status</th>
+                            <th>Journey</th>
+                            <th>Fare</th>
                             <th>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="ticket : ${allBookings}">
-                            <td><span class="fw-bold" th:text="${ticket.ticketId}">TK123456</span></td>
+                        <tr th:each="ticket : ${activeBookings}">
                             <td>
-                                <span th:text="${ticket.train.trainName}">Rajdhani</span><br>
-                                <small class="text-muted" th:text="${ticket.train.trainNo}">12301</small>
-                            </td>
-                            <td th:text="${#temporals.format(ticket.journeyDate, 'dd-MM-yyyy')}">01-01-2026</td>
-                            <td th:text="${ticket.passengerName}">John Doe</td>
-                            <td th:text="${ticket.classType}">AC</td>
-                            <td th:text="${ticket.numberOfSeats}">2</td>
-                            <td>₹<span th:text="${ticket.totalFare}">2500</span></td>
-                            <td th:text="${#temporals.format(ticket.bookingDate, 'dd-MM-yyyy HH:mm')}">01-01-2026 10:30</td>
-                            <td>
-                                        <span class="badge" th:classappend="${ticket.ticketStatus.name() == 'CONFIRMED' ? 'bg-success' :
-                                                                              (ticket.ticketStatus.name() == 'CANCELLED' ? 'bg-danger' : 'bg-warning')}">
-                                            <span th:text="${ticket.ticketStatus.name()}">CONFIRMED</span>
-                                        </span>
+                                <div class="fw-semibold" th:text="${ticket.ticketId}">TK1001</div>
+                                <div class="small text-muted" th:text="${ticket.passengerName}">Passenger</div>
                             </td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}"
-                                       class="btn btn-sm btn-outline-primary" title="View Ticket">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED'}"
-                                       th:href="@{/user/cancel-ticket/{id}(id=${ticket.ticketId})}"
-                                       class="btn btn-sm btn-outline-danger"
-                                       onclick="return confirm('Are you sure you want to cancel this ticket?')"
-                                       title="Cancel Ticket">
-                                        <i class="fas fa-times"></i>
-                                    </a>
-                                    <a th:href="@{/booking/download-pdf/{ticketId}(ticketId=${ticket.ticketId})}"
-                                       class="btn btn-sm btn-outline-success" title="Download Ticket">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                    <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED' and !ticket.journeyDate.isBefore(today)}"
-                                       th:href="@{/user/meal-order/{id}(id=${ticket.ticketId})}"
-                                       class="btn btn-sm btn-outline-warning" title="Order Meal">
-                                        <i class="fas fa-utensils"></i>
-                                    </a>
-                                </div>
+                                <div th:text="${ticket.train.trainName}">Rajdhani</div>
+                                <div class="small text-muted" th:text="${ticket.train.trainNo}">12345</div>
+                            </td>
+                            <td>
+                                <div th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">29 Mar 2026</div>
+                                <div class="small text-muted" th:text="${ticket.train.departureTime}">08:30</div>
+                            </td>
+                            <td th:text="'Rs ' + ${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">Rs 0</td>
+                            <td class="d-flex gap-2">
+                                <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a th:href="@{/user/cancel-ticket/{id}(id=${ticket.ticketId})}" class="btn btn-sm btn-outline-danger">Cancel Ticket</a>
                             </td>
                         </tr>
                         </tbody>
@@ -87,24 +58,99 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div layout:fragment="scripts">
-    <script th:src="@{/webjars/datatables/1.13.6/js/jquery.dataTables.min.js}"></script>
-    <script th:src="@{/webjars/datatables/1.13.6/js/dataTables.bootstrap5.min.js}"></script>
-    <script>
-        $(document).ready(function() {
-            $('.datatable').DataTable({
-                pageLength: 10,
-                order: [ [7, 'desc'] ],
-                language: {
-                    search: "Search bookings:",
-                    lengthMenu: "Show _MENU_ bookings per page"
-                }
-            });
-        });
-    </script>
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Cancellation And Refund Tracking</h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(allBookings)}" class="text-muted">No bookings found.</div>
+                <div th:unless="${#lists.isEmpty(allBookings)}" class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Booking Status</th>
+                            <th>Refund Status</th>
+                            <th>Refund Amount</th>
+                            <th>Requested On</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ticket : ${allBookings}">
+                            <td th:text="${ticket.ticketId}">TK1001</td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${ticket.bookingStatus == 'CONFIRMED' ? 'bg-success' :
+                                                       (ticket.bookingStatus == 'CANCELLATION_PENDING' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                      th:text="${ticket.bookingStatus}">CONFIRMED</span>
+                            </td>
+                            <td>
+                                <span th:if="${ticket.refundStatus != null}" class="badge"
+                                      th:classappend="${ticket.refundStatus == 'PENDING' ? 'bg-warning text-dark' :
+                                                       (ticket.refundStatus == 'PROCESSING' ? 'bg-info text-dark' :
+                                                       (ticket.refundStatus == 'COMPLETED' ? 'bg-success' :
+                                                       (ticket.refundStatus == 'DECLINED' ? 'bg-danger' : 'bg-secondary')))}"
+                                      th:text="${ticket.refundStatus}">PENDING</span>
+                                <span th:if="${ticket.refundStatus == null}" class="text-muted">NA</span>
+                            </td>
+                            <td>
+                                <span th:if="${ticket.refundAmount != null}"
+                                      th:text="'Rs ' + ${#numbers.formatDecimal(ticket.refundAmount, 0, 'COMMA', 2, 'POINT')}">Rs 0</span>
+                                <span th:if="${ticket.refundAmount == null}" class="text-muted">NA</span>
+                            </td>
+                            <td>
+                                <span th:if="${ticket.cancellationRequestedDate != null}"
+                                      th:text="${#temporals.format(ticket.cancellationRequestedDate, 'dd MMM yyyy HH:mm')}">27 Mar 2026</span>
+                                <span th:if="${ticket.cancellationRequestedDate == null}" class="text-muted">NA</span>
+                            </td>
+                            <td class="d-flex gap-2">
+                                <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a th:if="${ticket.refundStatus != null}"
+                                   th:href="@{/cancellation/status/{ticketId}(ticketId=${ticket.ticketId})}"
+                                   class="btn btn-sm btn-outline-secondary">Track Refund</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Cancelled Tickets History</h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(cancelledBookings)}" class="text-muted">No cancelled tickets yet.</div>
+                <div th:unless="${#lists.isEmpty(cancelledBookings)}" class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Train</th>
+                            <th>Cancelled On</th>
+                            <th>Refund Status</th>
+                            <th>Refund Amount</th>
+                            <th>Remarks</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ticket : ${cancelledBookings}">
+                            <td th:text="${ticket.ticketId}">TK1001</td>
+                            <td th:text="${ticket.train.trainName}">Rajdhani</td>
+                            <td th:text="${ticket.cancellationDate != null ? #temporals.format(ticket.cancellationDate, 'dd MMM yyyy HH:mm') : 'NA'}">27 Mar 2026</td>
+                            <td th:text="${ticket.refundStatus ?: 'NA'}">PROCESSING</td>
+                            <td th:text="${ticket.refundAmount != null ? 'Rs ' + #numbers.formatDecimal(ticket.refundAmount, 0, 'COMMA', 2, 'POINT') : 'NA'}">Rs 0</td>
+                            <td th:text="${ticket.adminRemarks ?: 'NA'}">Approved</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

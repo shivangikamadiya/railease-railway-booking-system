@@ -1,7 +1,7 @@
 package com.railease.controller;
 
 import com.railease.constants.UserRole;
-import com.railease.dto.CancellationRequestDTO;
+import com.railease.dto.CancellationRuleDTO;
 import com.railease.dto.MealDTO;
 import com.railease.dto.TrainDTO;
 import com.railease.entity.Meal;
@@ -23,7 +23,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -341,6 +340,15 @@ public class AdminController {
 
     @GetMapping("/cancellations")
     public String viewCancellationRequests(HttpSession session, Model model) {
+        return viewCancellationRequests(null, null, null, session, model);
+    }
+
+    @GetMapping("/cancellations/filter")
+    public String viewCancellationRequests(@RequestParam(required = false) String refundStatus,
+                                           @RequestParam(required = false) Long userId,
+                                           @RequestParam(required = false) String ticketId,
+                                           HttpSession session,
+                                           Model model) {
         if (!isAdmin(session)) {
             return "redirect:/login";
         }
@@ -348,14 +356,22 @@ public class AdminController {
         model.addAttribute("ticketRequests", cancellationService.getTicketCancellationRequests());
         model.addAttribute("mealRequests", cancellationService.getMealCancellationRequests());
         model.addAttribute("stats", cancellationService.getCancellationStatistics());
+        List<Ticket> history = cancellationService.getTicketCancellationHistory(refundStatus, userId, ticketId);
+        model.addAttribute("history", history);
+        model.addAttribute("processingHistory",
+                cancellationService.getTicketCancellationHistory("PROCESSING", null, null));
+        model.addAttribute("rules", cancellationService.getCancellationRules());
+        model.addAttribute("ruleForm", new CancellationRuleDTO());
+        model.addAttribute("selectedRefundStatus", refundStatus);
+        model.addAttribute("selectedUserId", userId);
+        model.addAttribute("selectedTicketId", ticketId);
         model.addAttribute("activeUser", session.getAttribute("activeUser"));
 
         return "admin/cancellation-requests";
     }
 
     @PostMapping("/cancellations/ticket/approve")
-    public String approveTicketCancellation(@RequestParam Long ticketId,
-                                            @RequestParam Double refundPercentage,
+    public String approveTicketCancellation(@RequestParam String ticketId,
                                             HttpSession session,
                                             RedirectAttributes redirectAttributes) {
         if (!isAdmin(session)) {
@@ -363,9 +379,9 @@ public class AdminController {
         }
 
         try {
-            cancellationService.approveTicketCancellation(ticketId, refundPercentage);
+            cancellationService.approveTicketCancellation(ticketId);
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Ticket cancellation approved successfully!");
+                    "Ticket cancellation approved. Refund moved to processing.");
         } catch (Exception e) {
             log.error("Error approving ticket cancellation: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -375,7 +391,7 @@ public class AdminController {
     }
 
     @PostMapping("/cancellations/ticket/reject")
-    public String rejectTicketCancellation(@RequestParam Long ticketId,
+    public String rejectTicketCancellation(@RequestParam String ticketId,
                                            @RequestParam String reason,
                                            HttpSession session,
                                            RedirectAttributes redirectAttributes) {
@@ -389,6 +405,27 @@ public class AdminController {
                     "Ticket cancellation rejected!");
         } catch (Exception e) {
             log.error("Error rejecting ticket cancellation: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/cancellations";
+    }
+
+    @PostMapping("/cancellations/ticket/complete")
+    public String completeTicketRefund(@RequestParam String ticketId,
+                                       @RequestParam(required = false) String transactionId,
+                                       HttpSession session,
+                                       RedirectAttributes redirectAttributes) {
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+
+        try {
+            cancellationService.completeTicketRefund(ticketId, transactionId);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Refund marked as completed and user notification sent.");
+        } catch (Exception e) {
+            log.error("Error completing refund: {}", e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -439,12 +476,54 @@ public class AdminController {
 
     @GetMapping("/cancellations/calculate-refund")
     @ResponseBody
-    public Map<String, Object> calculateRefund(@RequestParam LocalDateTime departureTime,
-                                               @RequestParam LocalDateTime cancellationTime) {
+    public Map<String, Object> calculateRefund(@RequestParam java.time.LocalDateTime departureTime,
+                                               @RequestParam java.time.LocalDateTime cancellationTime) {
         Map<String, Object> result = new HashMap<>();
         Double percentage = cancellationService.calculateRefundPercentage(departureTime, cancellationTime);
         result.put("refundPercentage", percentage);
         return result;
+    }
+
+    @PostMapping("/cancellations/rules")
+    public String saveCancellationRule(@Valid @ModelAttribute("ruleForm") CancellationRuleDTO ruleForm,
+                                       BindingResult result,
+                                       HttpSession session,
+                                       RedirectAttributes redirectAttributes) {
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+
+        if (result.hasErrors()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid cancellation rule details.");
+            return "redirect:/admin/cancellations";
+        }
+
+        try {
+            cancellationService.saveCancellationRule(ruleForm);
+            redirectAttributes.addFlashAttribute("successMessage", "Cancellation rule saved successfully.");
+        } catch (Exception e) {
+            log.error("Error saving cancellation rule: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/cancellations";
+    }
+
+    @PostMapping("/cancellations/rules/delete/{ruleId}")
+    public String deleteCancellationRule(@PathVariable Long ruleId,
+                                         HttpSession session,
+                                         RedirectAttributes redirectAttributes) {
+        if (!isAdmin(session)) {
+            return "redirect:/login";
+        }
+
+        try {
+            cancellationService.deleteCancellationRule(ruleId);
+            redirectAttributes.addFlashAttribute("successMessage", "Cancellation rule deleted successfully.");
+        } catch (Exception e) {
+            log.error("Error deleting cancellation rule: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/cancellations";
     }
 
     @PostMapping("/trains/add")

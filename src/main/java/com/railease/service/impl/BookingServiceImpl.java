@@ -2,9 +2,11 @@ package com.railease.service.impl;
 
 import com.railease.constants.TicketStatus;
 import com.railease.dto.*;
+import com.railease.entity.CancellationRule;
 import com.railease.entity.Ticket;
 import com.railease.entity.Train;
 import com.railease.entity.User;
+import com.railease.repository.CancellationRuleRepository;
 import com.railease.repository.TicketRepository;
 import com.railease.repository.TrainRepository;
 import com.railease.repository.UserRepository;
@@ -37,6 +39,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketRepository ticketRepository;
     private final TrainRepository trainRepository;
     private final UserRepository userRepository;
+    private final CancellationRuleRepository cancellationRuleRepository;
     private final TicketIdGenerator ticketIdGenerator;
 
     @Override
@@ -189,32 +192,47 @@ public class BookingServiceImpl implements BookingService {
         if (!ticket.getUser().getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized cancellation request.");
         }
+        if (!isTicketEligibleForCancellation(ticket)) {
+            throw new RuntimeException("Only confirmed future tickets can be cancelled.");
+        }
+        if ("PENDING".equalsIgnoreCase(ticket.getRefundStatus())
+                || "PROCESSING".equalsIgnoreCase(ticket.getRefundStatus())) {
+            throw new RuntimeException("Cancellation request is already under review.");
+        }
 
-        RefundCalculationDTO calculation = calculateRefund(
+        RefundCalculationDTO calculation = buildRefundCalculation(
                 ticket.getTotalFare(),
-                ticket.getJourneyDate(),
-                ticket.getBookingDate()
+                getDepartureDateTime(ticket),
+                LocalDateTime.now()
         );
 
-        ticket.setTicketStatus(TicketStatus.CANCELLED);
-        ticket.setBookingStatus("CANCELLED");
-        ticket.setCancellationDate(LocalDateTime.now());
+        if (!Boolean.TRUE.equals(calculation.getIsEligible())) {
+            throw new RuntimeException(calculation.getMessage());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        ticket.setBookingStatus("CANCELLATION_PENDING");
         ticket.setCancellationReason(reason);
         ticket.setRefundStatus("PENDING");
         ticket.setRefundAmount(calculation.getRefundAmount());
         ticket.setRefundPercentage(calculation.getRefundPercentage());
         ticket.setCancellationCharges(calculation.getCancellationCharges());
-        ticket.setCancellationRequestedDate(LocalDateTime.now());
+        ticket.setCancellationRequestedDate(now);
+        ticket.setAdminRemarks(null);
+        ticket.setCancellationDecisionDate(null);
+        ticket.setRefundProcessedDate(null);
+        ticket.setRefundDate(null);
+        ticket.setRefundTransactionId(null);
 
         ticketRepository.save(ticket);
 
         return CancellationResponseDTO.builder()
                 .ticketId(ticketId)
-                .status("CANCELLED")
-                .message("Cancellation processed successfully")
+                .status("PENDING")
+                .message("Cancellation request submitted successfully")
                 .refundAmount(calculation.getRefundAmount())
                 .cancellationCharges(calculation.getCancellationCharges())
-                .cancellationTime(LocalDateTime.now())
+                .cancellationTime(now)
                 .refundStatus("PENDING")
                 .success(true)
                 .build();
@@ -251,10 +269,10 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Unauthorized refund estimate request.");
         }
 
-        RefundCalculationDTO calculation = calculateRefund(
+        RefundCalculationDTO calculation = buildRefundCalculation(
                 ticket.getTotalFare(),
-                ticket.getJourneyDate(),
-                ticket.getBookingDate()
+                getDepartureDateTime(ticket),
+                LocalDateTime.now()
         );
 
         return RefundEstimateDTO.builder()
@@ -321,9 +339,7 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     public boolean isCancellable(String ticketId) {
         Ticket ticket = getTicketById(ticketId);
-        LocalDateTime departureTime = getDepartureDateTime(ticket);
-        return departureTime.isAfter(LocalDateTime.now())
-                && ticket.getTicketStatus() != TicketStatus.CANCELLED;
+        return isTicketEligibleForCancellation(ticket);
     }
 
     @Override
@@ -337,19 +353,24 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public CancellationPolicyDTO getCancellationPolicy() {
-        List<RefundSlabDTO> slabs = List.of(
-                new RefundSlabDTO(48, null, 90.0, "48+ hours before departure"),
-                new RefundSlabDTO(24, 48, 70.0, "24-48 hours before departure"),
-                new RefundSlabDTO(12, 24, 50.0, "12-24 hours before departure"),
-                new RefundSlabDTO(0, 12, 20.0, "Up to 12 hours before departure")
-        );
+        List<CancellationRule> rules = getOrCreateRules();
+        List<RefundSlabDTO> slabs = rules.stream()
+                .map(rule -> new RefundSlabDTO(
+                        rule.getMinHoursBeforeDeparture(),
+                        rule.getMaxHoursBeforeDeparture(),
+                        rule.getRefundPercentage(),
+                        rule.getDescription()))
+                .toList();
 
         return CancellationPolicyDTO.builder()
                 .refundSlabs(slabs)
                 .minimumHoursForCancellation(0)
-                .maximumRefundPercentage(90.0)
+                .maximumRefundPercentage(slabs.stream()
+                        .map(RefundSlabDTO::getRefundPercentage)
+                        .max(Double::compareTo)
+                        .orElse(0.0))
                 .policyEffectiveDate(LocalDate.now().toString())
-                .policyVersion("1.0")
+                .policyVersion("2.0")
                 .build();
     }
 
@@ -420,18 +441,27 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private RefundStatusDTO buildRefundStatus(Ticket ticket) {
+        String refundStatus = ticket.getRefundStatus() != null ? ticket.getRefundStatus() : "NA";
         return RefundStatusDTO.builder()
                 .ticketId(ticket.getTicketId())
+                .ticketNumber(ticket.getTicketId())
                 .trainName(ticket.getTrain().getTrainName())
                 .passengerName(ticket.getPassengerName())
                 .cancellationDate(ticket.getCancellationDate())
                 .originalFare(ticket.getTotalFare())
                 .cancellationCharges(ticket.getCancellationCharges())
                 .refundAmount(ticket.getRefundAmount())
-                .refundStatus(ticket.getRefundStatus())
+                .refundStatus(refundStatus)
+                .refundStatusMessage(resolveRefundStatusMessage(refundStatus))
                 .refundTransactionId(ticket.getRefundTransactionId())
                 .paymentMethod(ticket.getPaymentMethod())
+                .refundMethod(ticket.getPaymentMethod())
+                .estimatedCompletionDate(ticket.getRefundProcessedDate() == null
+                        && ticket.getCancellationDecisionDate() != null
+                        ? ticket.getCancellationDecisionDate().plusDays(3)
+                        : null)
                 .actualCompletionDate(ticket.getRefundProcessedDate())
+                .timeline(buildRefundTimeline(ticket))
                 .build();
     }
 
@@ -464,21 +494,9 @@ public class BookingServiceImpl implements BookingService {
                     .build();
         }
 
-        double refundPercentage;
-        String policy;
-        if (hoursBeforeDeparture > 48) {
-            refundPercentage = 90.0;
-            policy = "48+ hours before departure";
-        } else if (hoursBeforeDeparture > 24) {
-            refundPercentage = 70.0;
-            policy = "24-48 hours before departure";
-        } else if (hoursBeforeDeparture > 12) {
-            refundPercentage = 50.0;
-            policy = "12-24 hours before departure";
-        } else {
-            refundPercentage = 20.0;
-            policy = "Up to 12 hours before departure";
-        }
+        CancellationRule applicableRule = findApplicableRule(departureTime, cancellationTime).orElse(null);
+        double refundPercentage = applicableRule != null ? applicableRule.getRefundPercentage() : 0.0;
+        String policy = applicableRule != null ? applicableRule.getDescription() : "No refund rule matched";
 
         double refundAmount = totalFare * (refundPercentage / 100);
         double cancellationCharges = totalFare - refundAmount;
@@ -491,7 +509,9 @@ public class BookingServiceImpl implements BookingService {
                 .appliedPolicy(policy)
                 .hoursBeforeDeparture((int) hoursBeforeDeparture)
                 .isEligible(true)
-                .message("Refund eligible as per policy.")
+                .message(refundPercentage > 0
+                        ? "Refund eligible as per policy."
+                        : "Cancellation allowed but no refund is applicable.")
                 .build();
     }
 
@@ -500,5 +520,86 @@ public class BookingServiceImpl implements BookingService {
                 ? ticket.getTrain().getDepartureTime()
                 : LocalTime.MIDNIGHT;
         return ticket.getJourneyDate().atTime(departureTime);
+    }
+
+    private boolean isTicketEligibleForCancellation(Ticket ticket) {
+        return ticket.getTicketStatus() == TicketStatus.CONFIRMED
+                && "CONFIRMED".equalsIgnoreCase(ticket.getBookingStatus())
+                && getDepartureDateTime(ticket).isAfter(LocalDateTime.now());
+    }
+
+    private List<CancellationRule> getOrCreateRules() {
+        List<CancellationRule> rules = cancellationRuleRepository.findActiveRules();
+        if (!rules.isEmpty()) {
+            return rules;
+        }
+
+        List<CancellationRule> defaults = List.of(
+                CancellationRule.builder().minHoursBeforeDeparture(24).maxHoursBeforeDeparture(null)
+                        .refundPercentage(100.0).description("24+ hours before departure").isActive(true).build(),
+                CancellationRule.builder().minHoursBeforeDeparture(12).maxHoursBeforeDeparture(24)
+                        .refundPercentage(50.0).description("12-24 hours before departure").isActive(true).build(),
+                CancellationRule.builder().minHoursBeforeDeparture(0).maxHoursBeforeDeparture(12)
+                        .refundPercentage(0.0).description("Less than 12 hours before departure").isActive(true).build()
+        );
+        return cancellationRuleRepository.saveAll(defaults);
+    }
+
+    private java.util.Optional<CancellationRule> findApplicableRule(LocalDateTime departureTime, LocalDateTime cancellationTime) {
+        long hoursBeforeDeparture = Math.max(0, ChronoUnit.HOURS.between(cancellationTime, departureTime));
+        return getOrCreateRules().stream()
+                .filter(rule -> hoursBeforeDeparture >= rule.getMinHoursBeforeDeparture())
+                .filter(rule -> rule.getMaxHoursBeforeDeparture() == null
+                        || hoursBeforeDeparture < rule.getMaxHoursBeforeDeparture())
+                .findFirst();
+    }
+
+    private String resolveRefundStatusMessage(String refundStatus) {
+        return switch (refundStatus.toUpperCase()) {
+            case "PENDING" -> "Ticket refund status is pending.";
+            case "PROCESSING" -> "Ticket refund status is under processing.";
+            case "COMPLETED" -> "Ticket refund status is completed.";
+            case "DECLINED" -> "Ticket refund request was declined.";
+            default -> "Ticket refund status is unavailable.";
+        };
+    }
+
+    private List<RefundTimelineDTO> buildRefundTimeline(Ticket ticket) {
+        List<RefundTimelineDTO> timeline = new ArrayList<>();
+        timeline.add(RefundTimelineDTO.builder()
+                .stage("Cancellation Requested")
+                .message(ticket.getCancellationReason() != null
+                        ? "Reason: " + ticket.getCancellationReason()
+                        : "Your cancellation request was submitted.")
+                .timestamp(ticket.getCancellationRequestedDate())
+                .completed(ticket.getCancellationRequestedDate() != null)
+                .build());
+        timeline.add(RefundTimelineDTO.builder()
+                .stage("Admin Review")
+                .message(ticket.getCancellationDecisionDate() != null
+                        ? (ticket.getAdminRemarks() != null ? ticket.getAdminRemarks() : "Reviewed by admin")
+                        : "Awaiting admin review")
+                .timestamp(ticket.getCancellationDecisionDate())
+                .completed(ticket.getCancellationDecisionDate() != null)
+                .build());
+        timeline.add(RefundTimelineDTO.builder()
+                .stage("Refund Processing")
+                .message("PROCESSING".equalsIgnoreCase(ticket.getRefundStatus()) || "COMPLETED".equalsIgnoreCase(ticket.getRefundStatus())
+                        ? "Refund is being sent to the original payment source"
+                        : "Refund processing has not started")
+                .timestamp("PROCESSING".equalsIgnoreCase(ticket.getRefundStatus()) || "COMPLETED".equalsIgnoreCase(ticket.getRefundStatus())
+                        ? ticket.getCancellationDecisionDate()
+                        : null)
+                .completed("PROCESSING".equalsIgnoreCase(ticket.getRefundStatus()) || "COMPLETED".equalsIgnoreCase(ticket.getRefundStatus()))
+                .build());
+        timeline.add(RefundTimelineDTO.builder()
+                .stage("Refund Completed")
+                .message(ticket.getRefundProcessedDate() != null
+                        ? "Refund transaction completed"
+                        : "Awaiting refund completion")
+                .timestamp(ticket.getRefundProcessedDate())
+                .completed(ticket.getRefundProcessedDate() != null)
+                .build());
+        return timeline;
     }
 }

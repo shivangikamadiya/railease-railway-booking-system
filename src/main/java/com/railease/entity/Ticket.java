@@ -78,6 +78,9 @@ public class Ticket {
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;
 
+    @Column(name = "admin_remarks", length = 500)
+    private String adminRemarks;
+
     @Column(name = "refund_amount")
     private Double refundAmount;
 
@@ -98,6 +101,9 @@ public class Ticket {
 
     @Column(name = "refund_transaction_id", length = 50)
     private String refundTransactionId;
+
+    @Column(name = "cancellation_decision_date")
+    private LocalDateTime cancellationDecisionDate;
 
     @Column(name = "cancellation_charges")
     private Double cancellationCharges;

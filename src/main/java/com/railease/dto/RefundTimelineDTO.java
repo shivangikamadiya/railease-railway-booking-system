@@ -15,5 +15,5 @@ public class RefundTimelineDTO {
     private String status;
     private LocalDateTime timestamp;
     private String message;
-    private Boolean isCompleted;
+    private Boolean completed;
 }
