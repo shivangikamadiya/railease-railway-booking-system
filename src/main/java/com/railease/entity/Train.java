@@ -41,6 +41,12 @@ public class Train {
     @Column(name = "destination_station", nullable = false, length = 50)
     private String destinationStation;
 
+    @Column(name = "source_code", length = 10)
+    private String sourceCode;
+
+    @Column(name = "destination_code", length = 10)
+    private String destinationCode;
+
     @Column(name = "departure_time", nullable = false)
     private LocalTime departureTime;
 
@@ -52,6 +58,12 @@ public class Train {
 
     @Column(name = "journey_date")
     private LocalDate journeyDate;
+
+    @Column(name = "run_from_date")
+    private LocalDate runFromDate;
+
+    @Column(name = "run_to_date")
+    private LocalDate runToDate;
 
     @Column(name = "available_seats")
     private Integer availableSeats;

@@ -37,6 +37,11 @@
             Registration successful! Please check your email to verify your account.
           </div>
 
+          <div th:if="${param.reset}" class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            Password reset successful! Please login with your new password.
+          </div>
+
           <form th:action="@{/login}" method="post">
             <div class="mb-3">
               <label class="form-label fw-bold">

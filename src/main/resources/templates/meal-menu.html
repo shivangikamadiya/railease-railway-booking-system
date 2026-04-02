@@ -33,6 +33,7 @@
     }
     .badge-veg { background: #e8f5e9; color: #2e7d32; }
     .badge-nonveg { background: #ffebee; color: #c62828; }
+    .badge-snack { background: #fff8e1; color: #ef6c00; }
     .badge-beverage { background: #e3f2fd; color: #1565c0; }
     .price-tag {
       font-size: 20px;
@@ -128,7 +129,7 @@
             <div class="card meal-card h-100">
               <div class="position-relative">
                 <th:block th:if="${meal.image != null}">
-                  <img th:src="'data:image/jpeg;base64,' + ${meal.imageBase64}"
+                  <img th:src="'data:' + ${meal.imageContentType} + ';base64,' + ${meal.imageBase64}"
                        class="meal-img" alt="Meal">
                 </th:block>
                 <th:block th:unless="${meal.image != null}">
@@ -138,9 +139,11 @@
                 </th:block>
                 <span class="meal-type-badge"
                       th:classappend="${meal.mealType == 'VEG' ? 'badge-veg' :
-                                       (meal.mealType == 'NON_VEG' ? 'badge-nonveg' : 'badge-beverage')}">
+                                       (meal.mealType == 'NON_VEG' ? 'badge-nonveg' :
+                                       (meal.mealType == 'SNACK' or meal.mealType == 'SNACKS' ? 'badge-snack' : 'badge-beverage'))}">
                   <i th:classappend="${meal.mealType == 'VEG' ? 'bi bi-leaf' :
-                                      (meal.mealType == 'NON_VEG' ? 'bi bi-fire' : 'bi bi-cup-straw')}"></i>
+                                      (meal.mealType == 'NON_VEG' ? 'bi bi-fire' :
+                                      (meal.mealType == 'SNACK' or meal.mealType == 'SNACKS' ? 'bi bi-cookie' : 'bi bi-cup-straw'))}"></i>
                   <span th:text="${meal.mealType}">VEG</span>
                 </span>
               </div>
@@ -168,7 +171,7 @@
             <div class="card meal-card h-100">
               <div class="position-relative">
                 <th:block th:if="${meal.image != null}">
-                  <img th:src="'data:image/jpeg;base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
+                  <img th:src="'data:' + ${meal.imageContentType} + ';base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
                 </th:block>
                 <th:block th:unless="${meal.image != null}">
                   <div class="bg-light text-center py-5" style="height: 180px;">
@@ -203,7 +206,7 @@
             <div class="card meal-card h-100">
               <div class="position-relative">
                 <th:block th:if="${meal.image != null}">
-                  <img th:src="'data:image/jpeg;base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
+                  <img th:src="'data:' + ${meal.imageContentType} + ';base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
                 </th:block>
                 <th:block th:unless="${meal.image != null}">
                   <div class="bg-light text-center py-5" style="height: 180px;">
@@ -234,17 +237,20 @@
       <!-- Snacks Tab -->
       <div class="tab-pane fade" id="snacks" role="tabpanel">
         <div class="row">
-          <div class="col-md-4 col-lg-3 mb-4" th:each="meal : ${meals}" th:if="${meal.mealType == 'SNACKS'}">
+          <div class="col-md-4 col-lg-3 mb-4" th:each="meal : ${meals}" th:if="${meal.mealType == 'SNACK' or meal.mealType == 'SNACKS'}">
             <div class="card meal-card h-100">
               <div class="position-relative">
                 <th:block th:if="${meal.image != null}">
-                  <img th:src="'data:image/jpeg;base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
+                  <img th:src="'data:' + ${meal.imageContentType} + ';base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
                 </th:block>
                 <th:block th:unless="${meal.image != null}">
                   <div class="bg-light text-center py-5" style="height: 180px;">
                     <i class="bi bi-cookie text-muted" style="font-size: 50px;"></i>
                   </div>
                 </th:block>
+                <span class="meal-type-badge badge-snack">
+                  <i class="bi bi-cookie"></i> SNACK
+                </span>
               </div>
               <div class="card-body">
                 <h5 class="card-title fw-bold" th:text="${meal.mealName}">Samosa</h5>
@@ -266,11 +272,11 @@
       <!-- Beverages Tab -->
       <div class="tab-pane fade" id="beverages" role="tabpanel">
         <div class="row">
-          <div class="col-md-4 col-lg-3 mb-4" th:each="meal : ${meals}" th:if="${meal.mealType == 'BEVERAGES'}">
+          <div class="col-md-4 col-lg-3 mb-4" th:each="meal : ${meals}" th:if="${meal.mealType == 'BEVERAGE' or meal.mealType == 'BEVERAGES'}">
             <div class="card meal-card h-100">
               <div class="position-relative">
                 <th:block th:if="${meal.image != null}">
-                  <img th:src="'data:image/jpeg;base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
+                  <img th:src="'data:' + ${meal.imageContentType} + ';base64,' + ${meal.imageBase64}" class="meal-img" alt="Meal">
                 </th:block>
                 <th:block th:unless="${meal.image != null}">
                   <div class="bg-light text-center py-5" style="height: 180px;">

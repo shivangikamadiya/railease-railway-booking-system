@@ -10,8 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -49,10 +51,14 @@ public class AdminTrainServiceImpl implements AdminTrainService {
                 .destination(trainDTO.getDestinationStation())
                 .sourceStation(trainDTO.getSourceStation())
                 .destinationStation(trainDTO.getDestinationStation())
+                .sourceCode(normalizeStationCode(trainDTO.getSourceCode()))
+                .destinationCode(normalizeStationCode(trainDTO.getDestinationCode()))
                 .departureTime(trainDTO.getDepartureTime())
                 .arrivalTime(trainDTO.getArrivalTime())
                 .travelDate(trainDTO.getJourneyDate())
                 .journeyDate(trainDTO.getJourneyDate())
+                .runFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getJourneyDate()))
+                .runToDate(trainDTO.getJourneyDate())
                 .availableSeats(trainDTO.getAcSeats() + trainDTO.getSleeperSeats() + trainDTO.getGeneralSeats())
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
@@ -77,10 +83,14 @@ public class AdminTrainServiceImpl implements AdminTrainService {
         existingTrain.setDestination(trainDTO.getDestinationStation());
         existingTrain.setSourceStation(trainDTO.getSourceStation());
         existingTrain.setDestinationStation(trainDTO.getDestinationStation());
+        existingTrain.setSourceCode(normalizeStationCode(trainDTO.getSourceCode()));
+        existingTrain.setDestinationCode(normalizeStationCode(trainDTO.getDestinationCode()));
         existingTrain.setDepartureTime(trainDTO.getDepartureTime());
         existingTrain.setArrivalTime(trainDTO.getArrivalTime());
         existingTrain.setTravelDate(trainDTO.getJourneyDate());
         existingTrain.setJourneyDate(trainDTO.getJourneyDate());
+        existingTrain.setRunFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getJourneyDate()));
+        existingTrain.setRunToDate(trainDTO.getJourneyDate());
         existingTrain.setAvailableSeats(trainDTO.getAcSeats() + trainDTO.getSleeperSeats() + trainDTO.getGeneralSeats());
         existingTrain.setAcSeats(trainDTO.getAcSeats());
         existingTrain.setSleeperSeats(trainDTO.getSleeperSeats());
@@ -133,6 +143,21 @@ public class AdminTrainServiceImpl implements AdminTrainService {
             return true;
         }
         throw new TrainNotFoundException("Train not found with number: " + trainNo);
+    }
+
+    private LocalDate resolveRunFromDate(LocalDate requestedRunFromDate, LocalDate runToDate) {
+        LocalDate baseRunFromDate = requestedRunFromDate != null ? requestedRunFromDate : LocalDate.now();
+        if (runToDate != null && baseRunFromDate.isAfter(runToDate)) {
+            return runToDate;
+        }
+        return baseRunFromDate;
+    }
+
+    private String normalizeStationCode(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
     }
 
     @Override

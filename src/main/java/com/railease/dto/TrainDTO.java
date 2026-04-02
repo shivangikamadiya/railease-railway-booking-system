@@ -26,6 +26,10 @@ public class TrainDTO {
     @NotBlank(message = "Destination station is required")
     private String destination;
 
+    private String sourceCode;
+
+    private String destinationCode;
+
     @NotNull(message = "Departure time is required")
     @DateTimeFormat(pattern = "HH:mm")
     private LocalTime departureTime;
@@ -37,6 +41,9 @@ public class TrainDTO {
     @NotNull(message = "Travel date is required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate travelDate;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate runFromDate;
 
     // Available seats - auto-calculated from AC + Sleeper + General seats
     private Integer availableSeats;

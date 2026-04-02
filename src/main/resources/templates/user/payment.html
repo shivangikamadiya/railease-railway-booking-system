@@ -139,26 +139,32 @@
             cursor: not-allowed;
         }
 
-        .test-card-info {
-            background: #fff3e0;
-            border-left: 4px solid #f8961e;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-bottom: 20px;
-        }
-
-        .test-card-info ul {
-            margin-bottom: 0;
-            padding-left: 20px;
-        }
-
-        .test-card-info li {
-            color: #6c757d;
-        }
-        
         .cursor-pointer {
             cursor: pointer;
+        }
+
+        .policy-box {
+            max-height: 220px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 16px;
+            background: #f8f9fa;
+        }
+
+        .policy-box h6 {
+            margin-bottom: 8px;
+        }
+
+        .policy-box p,
+        .policy-box li {
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .policy-scroll-hint {
+            font-size: 12px;
+            color: #6c757d;
         }
     </style>
 </head>
@@ -221,23 +227,6 @@
                         <div class="col-6 text-end">
                             <span class="h4 fw-bold text-primary">₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span></span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Test Card Info (for demo) -->
-            <div class="test-card-info mb-4">
-                <div class="d-flex">
-                    <i class="bi bi-info-circle-fill fs-4 me-3" style="color: #f8961e;"></i>
-                    <div>
-                        <h6 class="fw-bold mb-2">Test Payment Details (Demo)</h6>
-                        <ul class="small">
-                            <li><strong>Card:</strong> 4111 1111 1111 1111 (Visa) or 5555 5555 5555 4444 (Mastercard)</li>
-                            <li><strong>Name:</strong> Any name (min 3 characters)</li>
-                            <li><strong>Expiry:</strong> Any future date (MM/YY)</li>
-                            <li><strong>CVV:</strong> Any 3 digits</li>
-                            <li><strong>UPI:</strong> any@okhdfcbank, any@okicici</li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -407,8 +396,14 @@
 
                     <!-- Pay Button -->
                     <button type="submit" class="payment-btn" id="payButton">
-                        <i class="bi bi-lock-fill me-2"></i>
+                        <span class="pay-button-default">
+                            <i class="bi bi-lock-fill me-2"></i>
                         Pay ₹<span th:text="${#numbers.formatDecimal(ticket.totalFare, 0, 'COMMA', 2, 'POINT')}">2500.00</span>
+                        </span>
+                        <span class="pay-button-loading d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Processing Payment...
+                        </span>
                     </button>
                 </form>
 
@@ -425,142 +420,129 @@
     </div>
 </div>
 
-<script>
-    // Current selected payment method
-    let currentMethod = 'CARD';
+<th:block layout:fragment="scripts">
+    <script>
+        let currentMethod = 'CARD';
+        let isSubmitting = false;
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        selectPaymentMethod('CARD');
+        document.addEventListener('DOMContentLoaded', function() {
+            selectPaymentMethod('CARD');
+            updateCardPreview();
 
-        // Enable pay button when terms are checked
-        document.getElementById('terms').addEventListener('change', function() {
-            // Button always enabled - no need to check terms
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return;
+                }
+
+                let isValid = true;
+                let errorMessage = '';
+
+                if (currentMethod === 'CARD') {
+                    const cardNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
+                    const cardHolder = document.getElementById('cardHolderName').value.trim();
+                    const expiry = document.getElementById('expiryDate').value;
+                    const cvv = document.getElementById('cvv').value;
+
+                    if (cardNumber.length !== 16) {
+                        isValid = false;
+                        errorMessage = 'Please enter a 16-digit card number';
+                    } else if (cardHolder.length < 3) {
+                        isValid = false;
+                        errorMessage = 'Please enter card holder name';
+                    } else if (!isValidExpiryDate(expiry)) {
+                        isValid = false;
+                        errorMessage = 'Please enter valid expiry date (MM/YY)';
+                    } else if (!/^\d{3}$/.test(cvv)) {
+                        isValid = false;
+                        errorMessage = 'Please enter valid CVV';
+                    }
+                } else if (currentMethod === 'UPI') {
+                    const upiId = document.getElementById('upiId').value;
+                    if (!upiId.includes('@')) {
+                        isValid = false;
+                        errorMessage = 'Please enter a valid UPI ID';
+                    }
+                } else if (currentMethod === 'NETBANKING') {
+                    const bank = document.getElementById('bank').value;
+                    if (!bank) {
+                        isValid = false;
+                        errorMessage = 'Please select a bank';
+                    }
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert(errorMessage);
+                    return;
+                }
+
+                isSubmitting = true;
+                const payButton = document.getElementById('payButton');
+                payButton.disabled = true;
+                payButton.querySelector('.pay-button-default').classList.add('d-none');
+                payButton.querySelector('.pay-button-loading').classList.remove('d-none');
+            });
         });
-    });
 
-    function selectPaymentMethod(method) {
-        currentMethod = method;
+        function selectPaymentMethod(method) {
+            currentMethod = method;
+            document.getElementById('paymentMethod').value = method;
 
-        // Update hidden input field
-        document.getElementById('paymentMethod').value = method;
+            document.querySelectorAll('.payment-method-card').forEach(el => {
+                el.classList.remove('selected');
+            });
 
-        // Update UI for method cards
-        document.querySelectorAll('.payment-method-card').forEach(el => {
-            el.classList.remove('selected');
-        });
-
-        if (method === 'CARD') {
-            document.getElementById('method-card').classList.add('selected');
-            document.getElementById('cardFields').style.display = 'block';
-            document.getElementById('upiFields').style.display = 'none';
-            document.getElementById('netbankingFields').style.display = 'none';
-            document.getElementById('cardPreview').style.display = 'block';
-        } else if (method === 'UPI') {
-            document.getElementById('method-upi').classList.add('selected');
-            document.getElementById('cardFields').style.display = 'none';
-            document.getElementById('upiFields').style.display = 'block';
-            document.getElementById('netbankingFields').style.display = 'none';
-            document.getElementById('cardPreview').style.display = 'none';
-        } else {
-            document.getElementById('method-nb').classList.add('selected');
-            document.getElementById('cardFields').style.display = 'none';
-            document.getElementById('upiFields').style.display = 'none';
-            document.getElementById('netbankingFields').style.display = 'block';
-            document.getElementById('cardPreview').style.display = 'none';
-        }
-    }
-
-    function formatCardNumber(input) {
-        const digits = input.value.replace(/\D/g, '').slice(0, 16);
-        input.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-    }
-
-    function formatExpiry(input) {
-        const value = input.value.replace(/\D/g, '').slice(0, 4);
-
-        if (value.length >= 2) {
-            input.value = value.slice(0, 2) + '/' + value.slice(2, 4);
-        } else {
-            input.value = value;
-        }
-    }
-
-    function updateCardPreview() {
-        let cardNumber = document.getElementById('cardNumber').value || '**** **** **** ****';
-        let cardHolder = document.getElementById('cardHolderName').value || 'YOUR NAME';
-        let expiry = document.getElementById('expiryDate').value || 'MM/YY';
-
-        // Format card number for display (show last 4 digits only)
-        let cleanNumber = cardNumber.replace(/\D/g, '');
-        if (cleanNumber.length > 4) {
-            let last4 = cleanNumber.slice(-4);
-            cardNumber = '**** **** **** ' + last4;
+            if (method === 'CARD') {
+                document.getElementById('method-card').classList.add('selected');
+                document.getElementById('cardFields').style.display = 'block';
+                document.getElementById('upiFields').style.display = 'none';
+                document.getElementById('netbankingFields').style.display = 'none';
+                document.getElementById('cardPreview').style.display = 'block';
+            } else if (method === 'UPI') {
+                document.getElementById('method-upi').classList.add('selected');
+                document.getElementById('cardFields').style.display = 'none';
+                document.getElementById('upiFields').style.display = 'block';
+                document.getElementById('netbankingFields').style.display = 'none';
+                document.getElementById('cardPreview').style.display = 'none';
+            } else {
+                document.getElementById('method-nb').classList.add('selected');
+                document.getElementById('cardFields').style.display = 'none';
+                document.getElementById('upiFields').style.display = 'none';
+                document.getElementById('netbankingFields').style.display = 'block';
+                document.getElementById('cardPreview').style.display = 'none';
+            }
         }
 
-        document.getElementById('displayCardNumber').textContent = cardNumber;
-        document.getElementById('displayCardHolder').textContent = cardHolder.toUpperCase();
-        document.getElementById('displayExpiry').textContent = expiry;
-    }
-
-    // Form validation
-    document.getElementById('paymentForm').addEventListener('submit', function(e) {
-        let isValid = true;
-        let errorMessage = '';
-
-        if (currentMethod === 'CARD') {
-            const cardNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
+        function updateCardPreview() {
+            const enteredNumber = document.getElementById('cardNumber').value.replace(/\D/g, '');
+            const lastFourDigits = enteredNumber.slice(-4);
+            const displayNumber = lastFourDigits
+                ? '**** **** **** ' + lastFourDigits.padStart(4, '*')
+                : '**** **** **** ****';
             const cardHolder = document.getElementById('cardHolderName').value.trim();
-            const expiry = document.getElementById('expiryDate').value;
-            const cvv = document.getElementById('cvv').value;
+            const expiry = document.getElementById('expiryDate').value.trim();
 
-            if (cardNumber.length !== 16) {
-                isValid = false;
-                errorMessage = 'Please enter a 16-digit card number';
-            } else if (cardHolder.length < 3) {
-                isValid = false;
-                errorMessage = 'Please enter card holder name';
-            } else if (!isValidExpiryDate(expiry)) {
-                isValid = false;
-                errorMessage = 'Please enter valid expiry date (MM/YY)';
-            } else if (!/^\d{3}$/.test(cvv)) {
-                isValid = false;
-                errorMessage = 'Please enter valid CVV';
-            }
-        } else if (currentMethod === 'UPI') {
-            let upiId = document.getElementById('upiId').value;
-            if (!upiId.includes('@')) {
-                isValid = false;
-                errorMessage = 'Please enter a valid UPI ID';
-            }
-        } else if (currentMethod === 'NETBANKING') {
-            let bank = document.getElementById('bank').value;
-            if (!bank) {
-                isValid = false;
-                errorMessage = 'Please select a bank';
-            }
+            document.getElementById('displayCardNumber').textContent = displayNumber;
+            document.getElementById('displayCardHolder').textContent = cardHolder ? cardHolder.toUpperCase() : 'YOUR NAME';
+            document.getElementById('displayExpiry').textContent = expiry || 'MM/YY';
         }
 
-        if (!isValid) {
-            e.preventDefault();
-            alert(errorMessage);
+        function isValidExpiryDate(expiry) {
+            if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
+                return false;
+            }
+
+            const [monthText, yearText] = expiry.split('/');
+            const month = Number.parseInt(monthText, 10);
+            const year = 2000 + Number.parseInt(yearText, 10);
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            return year > currentYear || (year === currentYear && month >= currentMonth);
         }
-    });
-
-    function isValidExpiryDate(expiry) {
-        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)) {
-            return false;
-        }
-
-        const [monthText, yearText] = expiry.split('/');
-        const month = Number.parseInt(monthText, 10);
-        const year = 2000 + Number.parseInt(yearText, 10);
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-
-        return year > currentYear || (year === currentYear && month >= currentMonth);
-    }
-</script>
+    </script>
+</th:block>
 </body>
 </html>

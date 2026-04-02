@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,9 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        model.addAttribute("trainDTO", new TrainDTO());
+        TrainDTO trainDTO = new TrainDTO();
+        trainDTO.setRunFromDate(LocalDate.now());
+        model.addAttribute("trainDTO", trainDTO);
         model.addAttribute("activeUser", session.getAttribute("activeUser"));
 
         return "admin/add-train";
@@ -118,9 +121,12 @@ public class AdminController {
             trainDTO.setTrainName(train.getTrainName());
             trainDTO.setSource(train.getSource() != null ? train.getSource() : train.getSourceStation());
             trainDTO.setDestination(train.getDestination() != null ? train.getDestination() : train.getDestinationStation());
+            trainDTO.setSourceCode(train.getSourceCode());
+            trainDTO.setDestinationCode(train.getDestinationCode());
             trainDTO.setDepartureTime(train.getDepartureTime());
             trainDTO.setArrivalTime(train.getArrivalTime());
             trainDTO.setTravelDate(train.getTravelDate() != null ? train.getTravelDate() : train.getJourneyDate());
+            trainDTO.setRunFromDate(train.getRunFromDate() != null ? train.getRunFromDate() : LocalDate.now());
             trainDTO.setAvailableSeats(train.getAvailableSeats());
             // Seat fields
             trainDTO.setAcSeats(train.getAcSeats());

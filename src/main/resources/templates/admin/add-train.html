@@ -58,6 +58,20 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Source Code</label>
+                        <input type="text" class="form-control text-uppercase" th:field="*{sourceCode}"
+                               placeholder="Enter source station code">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Destination Code</label>
+                        <input type="text" class="form-control text-uppercase" th:field="*{destinationCode}"
+                               placeholder="Enter destination station code">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Departure Time *</label>
                         <input type="time" class="form-control" th:field="*{departureTime}" required>
                         <div class="text-danger" th:if="${#fields.hasErrors('departureTime')}"
@@ -74,7 +88,13 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Travel Date *</label>
+                        <label class="form-label fw-bold">Run From Date *</label>
+                        <input type="date" class="form-control" th:field="*{runFromDate}"
+                               th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Run To / Travel Date *</label>
                         <input type="date" class="form-control" th:field="*{travelDate}"
                                th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}" required>
                         <div class="text-danger" th:if="${#fields.hasErrors('travelDate')}"

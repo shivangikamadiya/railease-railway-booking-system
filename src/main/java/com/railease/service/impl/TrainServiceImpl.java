@@ -11,12 +11,16 @@ import com.railease.repository.TrainRepository;
 import com.railease.service.TrainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +60,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train addTrain(AdminTrainUpdateDTO trainDTO) {
         log.info("Adding new train: {}", trainDTO.getTrainNo());
 
@@ -74,10 +79,14 @@ public class TrainServiceImpl implements TrainService {
                 .destinationStation(trainDTO.getDestinationStation())
                 .source(trainDTO.getSourceStation())
                 .destination(trainDTO.getDestinationStation())
+                .sourceCode(normalizeStationCode(trainDTO.getSourceCode()))
+                .destinationCode(normalizeStationCode(trainDTO.getDestinationCode()))
                 .departureTime(trainDTO.getDepartureTime())
                 .arrivalTime(trainDTO.getArrivalTime())
                 .journeyDate(trainDTO.getJourneyDate())
                 .travelDate(trainDTO.getJourneyDate())
+                .runFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getJourneyDate()))
+                .runToDate(trainDTO.getJourneyDate())
                 .availableSeats(totalSeats)
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
@@ -98,6 +107,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train createTrain(TrainDTO trainDTO) {
         log.info("Creating new train: {}", trainDTO.getTrainName());
 
@@ -116,10 +126,14 @@ public class TrainServiceImpl implements TrainService {
                 .destinationStation(trainDTO.getDestination())
                 .source(trainDTO.getSource())
                 .destination(trainDTO.getDestination())
+                .sourceCode(normalizeStationCode(trainDTO.getSourceCode()))
+                .destinationCode(normalizeStationCode(trainDTO.getDestinationCode()))
                 .departureTime(trainDTO.getDepartureTime())
                 .arrivalTime(trainDTO.getArrivalTime())
                 .journeyDate(trainDTO.getTravelDate())
                 .travelDate(trainDTO.getTravelDate())
+                .runFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getTravelDate()))
+                .runToDate(trainDTO.getTravelDate())
                 .availableSeats(totalSeats)
                 .acSeats(trainDTO.getAcSeats())
                 .sleeperSeats(trainDTO.getSleeperSeats())
@@ -134,6 +148,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train updateTrain(AdminTrainUpdateDTO trainDTO) {
         log.info("Updating train: {}", trainDTO.getTrainNo());
 
@@ -150,6 +165,12 @@ public class TrainServiceImpl implements TrainService {
             existingTrain.setDestinationStation(trainDTO.getDestinationStation());
             existingTrain.setDestination(trainDTO.getDestinationStation());
         }
+        if (trainDTO.getSourceCode() != null) {
+            existingTrain.setSourceCode(normalizeStationCode(trainDTO.getSourceCode()));
+        }
+        if (trainDTO.getDestinationCode() != null) {
+            existingTrain.setDestinationCode(normalizeStationCode(trainDTO.getDestinationCode()));
+        }
         if (trainDTO.getDepartureTime() != null) {
             existingTrain.setDepartureTime(trainDTO.getDepartureTime());
         }
@@ -159,6 +180,8 @@ public class TrainServiceImpl implements TrainService {
         if (trainDTO.getJourneyDate() != null) {
             existingTrain.setJourneyDate(trainDTO.getJourneyDate());
             existingTrain.setTravelDate(trainDTO.getJourneyDate());
+            existingTrain.setRunToDate(trainDTO.getJourneyDate());
+            existingTrain.setRunFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getJourneyDate()));
         }
         if (trainDTO.getAcSeats() != null) {
             existingTrain.setAcSeats(trainDTO.getAcSeats());
@@ -197,12 +220,14 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train updateTrain(Train train) {
         log.info("Updating train: {}", train.getTrainNo());
         return trainRepository.save(train);
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train updateTrain(Integer id, TrainDTO trainDTO) throws TrainNotFoundException {
         log.info("Updating train with id: {}", id);
 
@@ -219,6 +244,8 @@ public class TrainServiceImpl implements TrainService {
             existingTrain.setDestinationStation(trainDTO.getDestination());
             existingTrain.setDestination(trainDTO.getDestination());
         }
+        existingTrain.setSourceCode(normalizeStationCode(trainDTO.getSourceCode()));
+        existingTrain.setDestinationCode(normalizeStationCode(trainDTO.getDestinationCode()));
         if (trainDTO.getDepartureTime() != null) {
             existingTrain.setDepartureTime(trainDTO.getDepartureTime());
         }
@@ -228,6 +255,8 @@ public class TrainServiceImpl implements TrainService {
         if (trainDTO.getTravelDate() != null) {
             existingTrain.setJourneyDate(trainDTO.getTravelDate());
             existingTrain.setTravelDate(trainDTO.getTravelDate());
+            existingTrain.setRunToDate(trainDTO.getTravelDate());
+            existingTrain.setRunFromDate(resolveRunFromDate(trainDTO.getRunFromDate(), trainDTO.getTravelDate()));
         }
         if (trainDTO.getAcSeats() != null) {
             existingTrain.setAcSeats(trainDTO.getAcSeats());
@@ -260,6 +289,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public void deleteTrain(Integer trainNo) {
         log.info("Deleting train: {}", trainNo);
 
@@ -288,8 +318,24 @@ public class TrainServiceImpl implements TrainService {
     @Override
     public List<Train> findTrainsBetweenStations(String source, String destination, LocalDate journeyDate) {
         log.info("Searching trains from {} to {} on {}", source, destination, journeyDate);
-        return trainRepository.findBySourceAndDestinationAndTravelDateAndIsActiveTrue(
-                source, destination, journeyDate);
+        String normalizedSource = normalizeStationValue(source);
+        String normalizedDestination = normalizeStationValue(destination);
+
+        List<Train> directMatches = trainRepository.findActiveTrainsByRouteAndDate(
+                normalizedSource, normalizedDestination, journeyDate);
+
+        if (!directMatches.isEmpty()) {
+            return directMatches.stream()
+                    .sorted(Comparator.comparing(Train::getDepartureTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+        }
+
+        return trainRepository.findByIsActiveTrue().stream()
+                .filter(train -> matchesStation(normalizedSource, train.getSource(), train.getSourceStation(), train.getSourceCode()))
+                .filter(train -> matchesStation(normalizedDestination, train.getDestination(), train.getDestinationStation(), train.getDestinationCode()))
+                .filter(train -> matchesJourneyDate(train, journeyDate))
+                .sorted(Comparator.comparing(Train::getDepartureTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -340,7 +386,62 @@ public class TrainServiceImpl implements TrainService {
         };
     }
 
+    private String normalizeStationValue(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private boolean matchesStation(String requestedValue, String... candidateValues) {
+        if (requestedValue == null || requestedValue.isBlank()) {
+            return true;
+        }
+
+        String normalizedRequested = requestedValue.toLowerCase(Locale.ROOT);
+        for (String candidateValue : candidateValues) {
+            String normalizedCandidate = normalizeStationValue(candidateValue).toLowerCase(Locale.ROOT);
+            if (!normalizedCandidate.isBlank() && normalizedCandidate.contains(normalizedRequested)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean matchesJourneyDate(Train train, LocalDate journeyDate) {
+        if (journeyDate == null) {
+            return true;
+        }
+
+        LocalDate runFrom = train.getRunFromDate() != null ? train.getRunFromDate() : LocalDate.now();
+        LocalDate runTo = train.getRunToDate() != null
+                ? train.getRunToDate()
+                : (train.getTravelDate() != null ? train.getTravelDate() : train.getJourneyDate());
+
+        if (runTo == null) {
+            return false;
+        }
+
+        return !journeyDate.isBefore(runFrom) && !journeyDate.isAfter(runTo);
+    }
+
+    private LocalDate resolveRunFromDate(LocalDate requestedRunFromDate, LocalDate runToDate) {
+        LocalDate baseRunFromDate = requestedRunFromDate != null ? requestedRunFromDate : LocalDate.now();
+        if (runToDate != null && baseRunFromDate.isAfter(runToDate)) {
+            return runToDate;
+        }
+        return baseRunFromDate;
+    }
+
+    private String normalizeStationCode(String value) {
+        String normalizedValue = normalizeStationValue(value);
+        return normalizedValue.isBlank() ? null : normalizedValue.toUpperCase(Locale.ROOT);
+    }
+
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train activateTrain(Integer trainNo) {
         log.info("Activating train: {}", trainNo);
         Train train = getTrainByNumber(trainNo);
@@ -349,6 +450,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train deactivateTrain(Integer trainNo) {
         log.info("Deactivating train: {}", trainNo);
         Train train = getTrainByNumber(trainNo);
@@ -357,6 +459,7 @@ public class TrainServiceImpl implements TrainService {
     }
 
     @Override
+    @CacheEvict(value = {"trains", "activeTrains"}, allEntries = true)
     public Train toggleTrainStatus(Integer id) throws TrainNotFoundException {
         log.info("Toggling status for train with id: {}", id);
 

@@ -9,6 +9,7 @@ import javax.persistence.*;
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Entity
@@ -28,6 +29,11 @@ public class Meal {
     @Transient
     public Long getId() {
         return mealId;
+    }
+
+    @Transient
+    public String getImageBase64() {
+        return image == null ? null : Base64.getEncoder().encodeToString(image);
     }
 
     @NotBlank(message = "Meal name is required")

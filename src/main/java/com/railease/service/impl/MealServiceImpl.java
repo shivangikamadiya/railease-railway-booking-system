@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -62,9 +64,11 @@ public class MealServiceImpl implements MealService {
                 .price(mealDTO.getPrice())
                 .availabilityStatus(mealDTO.getAvailabilityStatus() != null ?
                         mealDTO.getAvailabilityStatus() : true)
-                .mealType(mealDTO.getMealType())
+                .mealType(normalizeMealType(mealDTO.getMealType()))
                 .preparationTime(mealDTO.getPreparationTime())
                 .build();
+
+        applyMealImage(meal, mealDTO.getMealImage());
 
         Meal savedMeal = mealRepository.save(meal);
         log.info("Meal created successfully with id: {}", savedMeal.getId());
@@ -81,12 +85,43 @@ public class MealServiceImpl implements MealService {
         existingMeal.setDescription(mealDTO.getDescription());
         existingMeal.setPrice(mealDTO.getPrice());
         existingMeal.setAvailabilityStatus(mealDTO.getAvailabilityStatus());
-        existingMeal.setMealType(mealDTO.getMealType());
+        existingMeal.setMealType(normalizeMealType(mealDTO.getMealType()));
         existingMeal.setPreparationTime(mealDTO.getPreparationTime());
+        applyMealImage(existingMeal, mealDTO.getMealImage());
 
         Meal updatedMeal = mealRepository.save(existingMeal);
         log.info("Meal updated successfully with id: {}", updatedMeal.getId());
         return updatedMeal;
+    }
+
+    private void applyMealImage(Meal meal, MultipartFile mealImage) {
+        if (mealImage == null || mealImage.isEmpty()) {
+            return;
+        }
+
+        try {
+            meal.setImage(mealImage.getBytes());
+            meal.setImageContentType(mealImage.getContentType());
+            meal.setImageUrl(mealImage.getOriginalFilename());
+        } catch (IOException e) {
+            log.error("Failed to read meal image for {}", meal.getMealName(), e);
+            throw new RuntimeException("Unable to upload meal image", e);
+        }
+    }
+
+    private String normalizeMealType(String mealType) {
+        if (mealType == null) {
+            return null;
+        }
+
+        String normalized = mealType.trim().toUpperCase();
+        if ("SNACKS".equals(normalized)) {
+            return "SNACK";
+        }
+        if ("BEVERAGES".equals(normalized)) {
+            return "BEVERAGE";
+        }
+        return normalized;
     }
 
     @Override

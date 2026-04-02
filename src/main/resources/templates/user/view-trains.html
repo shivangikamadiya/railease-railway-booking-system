@@ -20,12 +20,12 @@
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">From</label>
                                 <input type="text" class="form-control" name="source"
-                                       th:value="${param.source}" placeholder="Source Station" required>
+                                       th:value="${param.source}" placeholder="Source station or code" required>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">To</label>
                                 <input type="text" class="form-control" name="destination"
-                                       th:value="${param.destination}" placeholder="Destination Station" required>
+                                       th:value="${param.destination}" placeholder="Destination station or code" required>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-bold">Journey Date</label>
@@ -39,6 +39,8 @@
                                 </button>
                             </div>
                         </form>
+                        <div class="alert alert-info mt-3 mb-0" th:if="${infoMessage}" th:text="${infoMessage}"></div>
+                        <div class="alert alert-danger mt-3 mb-0" th:if="${errorMessage}" th:text="${errorMessage}"></div>
                     </div>
                 </div>
             </div>
@@ -53,18 +55,21 @@
                             <span th:if="${#lists.isEmpty(trains)}">Available Trains</span>
                             <span th:unless="${#lists.isEmpty(trains)}">Search Results (Found <span th:text="${trains.size()}"></span> trains)</span>
                         </h5>
-                        <a th:href="@{/user/view-trains}" class="btn btn-sm btn-outline-secondary" th:if="${param.source != null}">
-                            <i class="fas fa-times me-1"></i>Clear Search
-                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Live updates: ON</span>
+                            <a th:href="@{/user/view-trains}" class="btn btn-sm btn-outline-secondary" th:if="${param.source != null}">
+                                <i class="fas fa-times me-1"></i>Clear Search
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div th:if="${#lists.isEmpty(trains)}" class="text-center py-5">
+                        <div id="emptyState" class="text-center py-5" th:style="${#lists.isEmpty(trains)} ? '' : 'display:none;'">
                             <i class="fas fa-train fa-4x text-muted mb-3"></i>
                             <h5>No trains available</h5>
                             <p class="text-muted">Try searching with different stations or date</p>
                         </div>
-                        <div th:unless="${#lists.isEmpty(trains)}" class="table-responsive">
-                            <table class="table table-hover datatable">
+                        <div id="tableContainer" class="table-responsive" th:style="${#lists.isEmpty(trains)} ? 'display:none;' : ''">
+                            <table id="trainsTable" class="table table-hover datatable">
                                 <thead>
                                 <tr>
                                     <th>Train No.</th>
@@ -78,7 +83,7 @@
                                     <th>Action</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="trainsTableBody">
                                 <tr th:each="train : ${trains}">
                                     <td><span class="fw-bold" th:text="${train.trainNo}">12301</span></td>
                                     <td th:text="${train.trainName}">Rajdhani Express</td>
@@ -114,10 +119,28 @@
 <div layout:fragment="scripts">
     <script th:src="@{/webjars/datatables/1.13.6/js/jquery.dataTables.min.js}"></script>
     <script th:src="@{/webjars/datatables/1.13.6/js/dataTables.bootstrap5.min.js}"></script>
-    <script>
+    <script th:inline="javascript">
         $(document).ready(function() {
-            if ($.fn.DataTable) {
-                $('.datatable').DataTable({
+            const trainsApiUrl = /*[[@{/user/api/active-trains}]]*/ '/user/api/active-trains';
+            const bookBaseUrl = /*[[@{/user/book}]]*/ '/user/book';
+            const defaultJourneyDate = /*[[${today}]]*/ '';
+            const queryParams = new URLSearchParams(window.location.search);
+            const hasSearch = queryParams.has('source') || queryParams.has('destination') || queryParams.has('journeyDate');
+            const selectedJourneyDate = queryParams.get('journeyDate') || defaultJourneyDate;
+            const selectedSource = (queryParams.get('source') || '').trim().toLowerCase();
+            const selectedDestination = (queryParams.get('destination') || '').trim().toLowerCase();
+            let dataTable;
+
+            function initDataTable() {
+                if (!$.fn.DataTable || $('#trainsTable').length === 0 || $('#trainsTableBody tr').length === 0) {
+                    return;
+                }
+
+                if ($.fn.DataTable.isDataTable('#trainsTable')) {
+                    $('#trainsTable').DataTable().destroy();
+                }
+
+                dataTable = $('#trainsTable').DataTable({
                     pageLength: 10,
                     order: [ [0, 'asc'] ],
                     language: {
@@ -126,6 +149,108 @@
                         info: "Showing _START_ to _END_ of _TOTAL_ trains"
                     }
                 });
+            }
+
+            function escapeHtml(value) {
+                const div = document.createElement('div');
+                div.innerText = value == null ? '' : String(value);
+                return div.innerHTML;
+            }
+
+            function formatFare(value) {
+                const numericValue = Number(value || 0);
+                return Number.isFinite(numericValue) ? numericValue.toFixed(2) : '0.00';
+            }
+
+            function applySearchFilter(trains) {
+                if (!hasSearch) {
+                    return trains;
+                }
+
+                return trains.filter(train => {
+                    const sourceFields = [
+                        train.source,
+                        train.sourceStation,
+                        train.sourceCode
+                    ].map(value => (value || '').toLowerCase());
+                    const destinationFields = [
+                        train.destination,
+                        train.destinationStation,
+                        train.destinationCode
+                    ].map(value => (value || '').toLowerCase());
+                    const runFromDate = train.runFromDate || new Date().toISOString().slice(0, 10);
+                    const runToDate = train.runToDate || train.travelDate || '';
+                    const matchesSource = !selectedSource || sourceFields.some(value => value.includes(selectedSource));
+                    const matchesDestination = !selectedDestination || destinationFields.some(value => value.includes(selectedDestination));
+                    const matchesDate = !selectedJourneyDate || (runToDate && selectedJourneyDate >= runFromDate && selectedJourneyDate <= runToDate);
+                    return matchesSource && matchesDestination && matchesDate;
+                });
+            }
+
+            function renderRows(trains) {
+                const tbody = $('#trainsTableBody');
+                const emptyState = $('#emptyState');
+                const tableContainer = $('#tableContainer');
+                const rows = trains.map(train => {
+                    const bookUrl = `${bookBaseUrl}/${encodeURIComponent(train.trainNo)}?classType=AC&journeyDate=${encodeURIComponent(selectedJourneyDate)}`;
+                    return `
+                        <tr>
+                            <td><span class="fw-bold">${escapeHtml(train.trainNo)}</span></td>
+                            <td>${escapeHtml(train.trainName)}</td>
+                            <td>${escapeHtml(train.source)}</td>
+                            <td>${escapeHtml(train.destination)}</td>
+                            <td>${escapeHtml(train.departureTime)}</td>
+                            <td>${escapeHtml(train.arrivalTime)}</td>
+                            <td><span class="badge bg-info">${escapeHtml(train.availableSeats)}</span></td>
+                            <td>₹${formatFare(train.generalFare)}</td>
+                            <td>
+                                <a href="${bookUrl}" class="btn btn-sm btn-success w-100">
+                                    <i class="fas fa-ticket-alt"></i> Book
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                if ($.fn.DataTable.isDataTable('#trainsTable')) {
+                    $('#trainsTable').DataTable().destroy();
+                }
+
+                tbody.html(rows);
+
+                if (trains.length === 0) {
+                    tableContainer.hide();
+                    emptyState.show();
+                } else {
+                    emptyState.hide();
+                    tableContainer.show();
+                    initDataTable();
+                }
+            }
+
+            async function refreshTrains() {
+                try {
+                    const response = await fetch(trainsApiUrl, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const trains = await response.json();
+                    const filteredTrains = applySearchFilter(trains || []);
+                    renderRows(filteredTrains);
+                } catch (error) {
+                    console.warn('Live train refresh failed:', error);
+                }
+            }
+
+            initDataTable();
+            setInterval(refreshTrains, 5000);
+
+            if ($.fn.DataTable) {
+                refreshTrains();
             }
         });
     </script>

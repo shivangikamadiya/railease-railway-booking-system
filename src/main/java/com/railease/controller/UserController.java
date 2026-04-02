@@ -12,6 +12,8 @@ import com.railease.service.TrainService;
 import com.railease.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,6 +116,40 @@ public class UserController {
         return "user/view-trains";
     }
 
+    @GetMapping("/api/active-trains")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> getActiveTrains(HttpSession session) {
+        User user = (User) session.getAttribute("activeUser");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        List<Train> trains = trainService.getAllActiveTrains();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Train train : trains) {
+            Map<String, Object> trainMap = new HashMap<>();
+            trainMap.put("trainNo", train.getTrainNo());
+            trainMap.put("trainName", train.getTrainName());
+            trainMap.put("source", train.getSource());
+            trainMap.put("destination", train.getDestination());
+            trainMap.put("sourceStation", train.getSourceStation());
+            trainMap.put("destinationStation", train.getDestinationStation());
+            trainMap.put("sourceCode", train.getSourceCode());
+            trainMap.put("destinationCode", train.getDestinationCode());
+            trainMap.put("departureTime", train.getDepartureTime());
+            trainMap.put("arrivalTime", train.getArrivalTime());
+            trainMap.put("availableSeats", train.getAvailableSeats());
+            trainMap.put("generalFare", train.getGeneralFare());
+            trainMap.put("travelDate", train.getTravelDate());
+            trainMap.put("runFromDate", train.getRunFromDate());
+            trainMap.put("runToDate", train.getRunToDate());
+            response.add(trainMap);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/search-trains")
     public String searchTrains(@RequestParam(required = false) String source,
                                @RequestParam(required = false) String destination,
@@ -127,18 +165,20 @@ public class UserController {
             if (source != null && destination != null && journeyDate != null
                     && !source.trim().isEmpty() && !destination.trim().isEmpty()) {
 
+                String normalizedSource = source.trim().replaceAll("\\s+", " ");
+                String normalizedDestination = destination.trim().replaceAll("\\s+", " ");
                 LocalDate date = LocalDate.parse(journeyDate);
-                log.info("Searching trains from {} to {} on {}", source, destination, date);
+                log.info("Searching trains from {} to {} on {}", normalizedSource, normalizedDestination, date);
 
-                List<Train> trains = trainService.findTrainsBetweenStations(source, destination, date);
+                List<Train> trains = trainService.findTrainsBetweenStations(normalizedSource, normalizedDestination, date);
 
                 model.addAttribute("trains", trains);
-                model.addAttribute("source", source);
-                model.addAttribute("destination", destination);
+                model.addAttribute("source", normalizedSource);
+                model.addAttribute("destination", normalizedDestination);
                 model.addAttribute("journeyDate", journeyDate);
 
                 if (trains.isEmpty()) {
-                    model.addAttribute("infoMessage", "No trains found for this route");
+                    model.addAttribute("infoMessage", "No trains found for this route and date");
                 }
             }
         } catch (Exception e) {

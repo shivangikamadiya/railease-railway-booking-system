@@ -22,6 +22,10 @@ public class AdminTrainUpdateDTO {
     @NotBlank(message = "Destination station is required")
     private String destinationStation;
 
+    private String sourceCode;
+
+    private String destinationCode;
+
     @NotNull(message = "Departure time is required")
     @DateTimeFormat(pattern = "HH:mm")
     private LocalTime departureTime;
@@ -33,6 +37,9 @@ public class AdminTrainUpdateDTO {
     @NotNull(message = "Journey date is required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate journeyDate;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate runFromDate;
 
     @NotNull(message = "AC seats count is required")
     @Min(value = 0, message = "AC seats cannot be negative")

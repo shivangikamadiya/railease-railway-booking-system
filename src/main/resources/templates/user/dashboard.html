@@ -6,10 +6,40 @@
     <title layout:fragment="title">Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        body {
+            background-color: #f4f7f6;
+        }
+
+        /* Fade In Up Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-up {
+            opacity: 0;
+            animation: fadeInUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* Dashboard Hero Updates */
         .dashboard-hero {
             position: relative;
             overflow: hidden;
-            background: linear-gradient(135deg, #1746a2 0%, #3559e0 45%, #4f46e5 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+            border-radius: 1.5rem !important;
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.25);
+            transition: transform 0.3s ease;
         }
 
         .dashboard-hero::before,
@@ -20,328 +50,416 @@
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.08);
             transform: rotate(18deg);
-        }
-
-        .dashboard-hero::before {
-            width: 220px;
-            height: 220px;
-            top: -70px;
-            right: 18%;
-        }
-
-        .dashboard-hero::after {
-            width: 160px;
-            height: 160px;
-            bottom: -60px;
-            right: 4%;
-        }
-
-        .dashboard-hero > * {
-            position: relative;
             z-index: 1;
         }
 
-        .quick-feature {
-            position: relative;
-            display: block;
-            height: 100%;
-            min-height: 220px;
-            padding: 1.75rem;
-            border-radius: 1.5rem;
-            text-decoration: none;
-            color: #1e2a5a;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-            border: 1px solid rgba(79, 70, 229, 0.12);
-            box-shadow: 0 14px 35px rgba(37, 56, 120, 0.08);
-            overflow: hidden;
-            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
-            animation: featureRise 0.65s ease both;
+        .dashboard-hero::before {
+            width: 300px;
+            height: 300px;
+            top: -100px;
+            right: 10%;
         }
 
-        .quick-feature::before {
-            content: "";
-            position: absolute;
-            inset: auto -30px -30px auto;
-            width: 130px;
-            height: 130px;
+        .dashboard-hero::after {
+            width: 150px;
+            height: 150px;
+            bottom: -50px;
+            right: -20px;
+        }
+        
+        .dashboard-hero > * {
+            position: relative;
+            z-index: 2;
+        }
+
+        .user-avatar {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #ffffff, #f0f9ff);
+            color: #1e3a8a;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(79, 70, 229, 0.12), transparent 70%);
-            transition: transform 0.35s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            border: 4px solid rgba(255,255,255,0.4);
+            transition: transform 0.4s ease;
+        }
+        
+        .dashboard-hero:hover .user-avatar {
+            transform: scale(1.05) rotate(-5deg);
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            border-radius: 1.25rem;
+            border: 1px solid rgba(0,0,0,0.04) !important;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.03) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important;
+            border-color: rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1);
+        }
+
+        .icon-blue { background: #eff6ff; color: #3b82f6; }
+        .icon-green { background: #f0fdf4; color: #22c55e; }
+        .icon-orange { background: #fff7ed; color: #f97316; }
+        .icon-purple { background: #faf5ff; color: #a855f7; }
+
+        /* Quick Feature Cards */
+        .quick-feature {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 240px;
+            padding: 2.25rem;
+            border-radius: 1.25rem;
+            text-decoration: none;
+            color: #1e293b;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.03);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .quick-feature::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--card-color, #3b82f6);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
         }
 
         .quick-feature:hover {
             transform: translateY(-8px);
-            box-shadow: 0 22px 45px rgba(37, 56, 120, 0.14);
-            border-color: rgba(79, 70, 229, 0.28);
-            color: #1e2a5a;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border-color: rgba(0,0,0,0.08);
+            color: #1e293b;
         }
 
-        .quick-feature:hover::before {
-            transform: scale(1.1);
+        .quick-feature:hover::after {
+            transform: scaleX(1);
         }
 
         .quick-feature-icon {
-            width: 72px;
-            height: 72px;
+            width: 68px;
+            height: 68px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 22px;
-            font-size: 1.8rem;
-            margin-bottom: 1.25rem;
+            border-radius: 18px;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            flex-shrink: 0;
+        }
+
+        .quick-feature:hover .quick-feature-icon {
+            transform: scale(1.15) rotate(5deg);
         }
 
         .quick-feature-title {
             font-size: 1.35rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
 
-        .quick-feature-copy {
-            color: #697493;
-            line-height: 1.6;
-            max-width: 18rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .quick-feature-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
+        /* Buttons and Elements */
+        .btn {
+            font-family: inherit;
+            text-transform: uppercase;
             font-weight: 600;
-            color: #4f46e5;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+            padding: 0.6rem 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0.75rem;
         }
 
-        .feature-book .quick-feature-icon {
-            background: linear-gradient(135deg, rgba(53, 89, 224, 0.18), rgba(79, 70, 229, 0.12));
-            color: #3559e0;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
 
-        .feature-bookings .quick-feature-icon {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(56, 189, 248, 0.12));
-            color: #0284c7;
-        }
-
-        .feature-pantry .quick-feature-icon {
-            background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(251, 146, 60, 0.12));
-            color: #ea580c;
-        }
-
-        .feature-refund .quick-feature-icon {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(196, 181, 253, 0.12));
-            color: #7c3aed;
-        }
-
-        .feature-profile .quick-feature-icon {
-            background: linear-gradient(135deg, rgba(236, 72, 153, 0.16), rgba(244, 114, 182, 0.12));
-            color: #db2777;
-        }
-
-        .feature-delay-2 {
-            animation-delay: 0.08s;
-        }
-
-        .feature-delay-3 {
-            animation-delay: 0.16s;
-        }
-
-        .feature-delay-4 {
-            animation-delay: 0.24s;
-        }
-
-        .feature-delay-5 {
-            animation-delay: 0.32s;
-        }
-
-        @keyframes featureRise {
-            from {
-                opacity: 0;
-                transform: translateY(18px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        /* Responsive Adjustments */
         @media (max-width: 991.98px) {
-            .quick-feature {
-                min-height: 200px;
-            }
+            .quick-feature { min-height: 220px; padding: 1.75rem; }
         }
 
         @media (max-width: 575.98px) {
-            .quick-feature {
-                min-height: 180px;
-                padding: 1.4rem;
-            }
-
-            .quick-feature-title {
-                font-size: 1.15rem;
-            }
-
-            .quick-feature-copy {
-                margin-bottom: 1rem;
-            }
+            .dashboard-hero { padding: 2rem !important; }
+            .user-avatar { width: 60px; height: 60px; font-size: 1.75rem; }
+            .quick-feature { min-height: 200px; padding: 1.5rem; }
+            .quick-feature-icon { width: 56px; height: 56px; font-size: 1.5rem; }
+        }
+        
+        .transition-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .transition-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-color: rgba(59, 130, 246, 0.3) !important;
         }
     </style>
 </head>
 <body>
 <div layout:fragment="content">
-    <div class="container py-4">
-        <div class="dashboard-hero p-4 rounded-4 text-white mb-4">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div>
-                    <h2 class="mb-1" th:text="'Welcome back, ' + ${activeUser.fullName}">Welcome back</h2>
-                    <div class="opacity-75">
-                        <span th:text="${activeUser.email}">user@example.com</span>
-                        <span class="mx-2">|</span>
-                        <span th:text="${activeUser.mobileNumber ?: 'Mobile not updated'}">9876543210</span>
+    <div class="container-fluid px-xl-5 py-5">
+        
+        <!-- Hero Section with Avatar -->
+        <div class="dashboard-hero p-5 text-white mb-5 animate-fade-up">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="user-avatar overflow-hidden">
+                        <img th:if="${activeUser.profilePhoto != null}" 
+                             th:src="'data:' + ${activeUser.profilePhotoContentType} + ';base64,' + ${activeUser.getProfilePhotoBase64()}" 
+                             class="w-100 h-100 object-fit-cover" 
+                             alt="Profile Photo" />
+                        <span th:unless="${activeUser.profilePhoto != null}" 
+                              th:text="${#strings.substring(activeUser.fullName, 0, 1).toUpperCase()}">U</span>
+                    </div>
+                    <div>
+                        <h2 class="mb-1 fw-bold text-white shadow-sm d-inline-block" th:text="'Hello, ' + ${activeUser.fullName}">Hello, User</h2>
+                        <div class="opacity-100 fs-6 mt-1 text-light">
+                            <i class="bi bi-envelope me-1"></i> <span th:text="${activeUser.email}">user@example.com</span>
+                            <span class="mx-3 opacity-50">|</span>
+                            <i class="bi bi-telephone me-1"></i> <span th:text="${activeUser.mobileNumber ?: 'Mobile not updated'}">9876543210</span>
+                        </div>
                     </div>
                 </div>
-                <a th:href="@{/user/profile}" class="btn btn-light">Manage Profile</a>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <div class="small text-muted">Total Bookings</div>
-                        <div class="display-6" th:text="${totalBookings}">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <div class="small text-muted">Upcoming Journeys</div>
-                        <div class="display-6" th:text="${upcomingJourneys}">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <div class="small text-muted">Meal Orders</div>
-                        <div class="display-6" th:text="${totalMealOrders}">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <div class="small text-muted">Total Spent</div>
-                        <div class="display-6" th:text="'Rs ' + ${#numbers.formatDecimal(totalSpent != null ? totalSpent : 0, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-            <div class="col-xl-4 col-md-6">
-                <a th:href="@{/user/view-trains}" class="quick-feature feature-book">
-                    <div class="quick-feature-icon">
-                        <i class="bi bi-ticket-perforated"></i>
-                    </div>
-                    <div class="quick-feature-title">Book Ticket</div>
-                    <div class="quick-feature-copy">Search trains, compare schedules, and reserve your next journey in a few steps.</div>
-                    <div class="quick-feature-link">Start booking <i class="bi bi-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <a th:href="@{/user/my-bookings}" class="quick-feature feature-bookings feature-delay-2">
-                    <div class="quick-feature-icon">
-                        <i class="bi bi-journal-check"></i>
-                    </div>
-                    <div class="quick-feature-title">My Bookings</div>
-                    <div class="quick-feature-copy">Check ticket details, booking status, and upcoming travel plans from one place.</div>
-                    <div class="quick-feature-link">View tickets <i class="bi bi-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <a th:href="@{/user/meal-menu}" class="quick-feature feature-pantry feature-delay-3">
-                    <div class="quick-feature-icon">
-                        <i class="bi bi-cup-hot"></i>
-                    </div>
-                    <div class="quick-feature-title">E-Pantry</div>
-                    <div class="quick-feature-copy">Order fresh meals and snacks for your trip with quick access to the onboard menu.</div>
-                    <div class="quick-feature-link">Explore meals <i class="bi bi-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-xl-6 col-md-6">
-                <a th:href="@{/user/cancellation-refunds}" class="quick-feature feature-refund feature-delay-4">
-                    <div class="quick-feature-icon">
-                        <i class="bi bi-arrow-counterclockwise"></i>
-                    </div>
-                    <div class="quick-feature-title">Cancellation &amp; Refund</div>
-                    <div class="quick-feature-copy">Track refund status, manage cancellation requests, and review completed settlements.</div>
-                    <div class="quick-feature-link">Open refunds <i class="bi bi-arrow-right"></i></div>
-                </a>
-            </div>
-            <div class="col-xl-6 col-md-6">
-                <a th:href="@{/user/profile}" class="quick-feature feature-profile feature-delay-5">
-                    <div class="quick-feature-icon">
-                        <i class="bi bi-person-circle"></i>
-                    </div>
-                    <div class="quick-feature-title">Profile</div>
-                    <div class="quick-feature-copy">Update your account details, contact information, and personal preferences anytime.</div>
-                    <div class="quick-feature-link">Manage account <i class="bi bi-arrow-right"></i></div>
+                <a th:href="@{/user/profile}" class="btn btn-light text-primary bg-white px-4 py-2 shadow-sm fw-bold border-0" style="border-radius: 50px;">
+                    <i class="bi bi-person-circle me-1"></i> Manage Profile
                 </a>
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4" th:if="${not #lists.isEmpty(featuredMeals)}">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Featured Meals</h5>
-                <a th:href="@{/user/meal-menu}" class="btn btn-sm btn-outline-primary">View All</a>
+        <!-- Metric Stat Cards -->
+        <div class="row g-4 mb-5 animate-fade-up delay-1">
+            <div class="col-xl-3 col-md-6">
+                <div class="card stat-card h-100 p-3 border-0">
+                    <div class="card-body d-flex align-items-center gap-4 p-0">
+                        <div class="stat-icon icon-blue">
+                            <i class="bi bi-ticket-detailed"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1 tracking-wider">Total Bookings</div>
+                            <h3 class="fw-bold mb-0 text-dark" th:text="${totalBookings}">0</h3>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3" th:each="meal : ${featuredMeals}">
-                        <div class="border rounded p-3 h-100">
-                            <div class="small text-muted" th:text="${meal.mealType}">VEG</div>
-                            <div class="fw-semibold mb-2" th:text="${meal.mealName}">Meal</div>
-                            <div class="mb-2" th:text="'Rs ' + ${#numbers.formatDecimal(meal.price, 0, 'COMMA', 2, 'POINT')}">Rs 0</div>
-                            <div class="small text-muted mb-3" th:text="${meal.description}">Description</div>
-                            <button class="btn btn-sm btn-primary w-100" th:onclick="'orderMeal(' + ${meal.mealId} + ')'">Order</button>
+            <div class="col-xl-3 col-md-6">
+                <div class="card stat-card h-100 p-3 border-0">
+                    <div class="card-body d-flex align-items-center gap-4 p-0">
+                        <div class="stat-icon icon-green">
+                            <i class="bi bi-train-front"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1 tracking-wider">Upcoming Trips</div>
+                            <h3 class="fw-bold mb-0 text-dark" th:text="${upcomingJourneys}">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card stat-card h-100 p-3 border-0">
+                    <div class="card-body d-flex align-items-center gap-4 p-0">
+                        <div class="stat-icon icon-orange">
+                            <i class="bi bi-cup-hot"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1 tracking-wider">Meal Orders</div>
+                            <h3 class="fw-bold mb-0 text-dark" th:text="${totalMealOrders}">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card stat-card h-100 p-3 border-0">
+                    <div class="card-body d-flex align-items-center gap-4 p-0">
+                        <div class="stat-icon icon-purple">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1 tracking-wider">Total Spent</div>
+                            <h3 class="fw-bold mb-0 text-dark" th:text="'Rs ' + ${#numbers.formatDecimal(totalSpent != null ? totalSpent : 0, 0, 'COMMA', 2, 'POINT')}">Rs 0</h3>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Recent Bookings</h5>
-                <a th:href="@{/user/my-bookings}" class="btn btn-sm btn-outline-primary">View All</a>
+        <!-- Features Grid -->
+        <h4 class="mb-4 fw-bold text-dark animate-fade-up delay-2">Quick Actions</h4>
+        <div class="row g-4 mb-5 animate-fade-up delay-2">
+            <div class="col-xl-4 col-md-6">
+                <a th:href="@{/user/view-trains}" class="quick-feature" style="--card-color: #3b82f6;">
+                    <div class="quick-feature-icon" style="background: #eff6ff; color: #3b82f6;">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="quick-feature-title fw-bold">Book Ticket</h5>
+                        <p class="quick-feature-copy text-muted mb-4 fs-6">Search trains, compare schedules, and reserve your next journey comfortably.</p>
+                    </div>
+                    <div class="quick-feature-link text-primary fw-semibold d-flex align-items-center gap-2 mt-auto">Start booking <i class="bi bi-arrow-right"></i></div>
+                </a>
             </div>
-            <div class="card-body">
-                <div th:if="${#lists.isEmpty(recentBookings)}" class="text-muted">No recent bookings.</div>
+            <div class="col-xl-4 col-md-6">
+                <a th:href="@{/user/my-bookings}" class="quick-feature" style="--card-color: #0ea5e9;">
+                    <div class="quick-feature-icon" style="background: #f0f9ff; color: #0ea5e9;">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="quick-feature-title fw-bold">My Bookings</h5>
+                        <p class="quick-feature-copy text-muted mb-4 fs-6">Check ticket details, current status, and your upcoming travel plans in one place.</p>
+                    </div>
+                    <div class="quick-feature-link fw-semibold d-flex align-items-center gap-2 mt-auto" style="color: #0ea5e9;">View tickets <i class="bi bi-arrow-right"></i></div>
+                </a>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <a th:href="@{/user/meal-menu}" class="quick-feature" style="--card-color: #f59e0b;">
+                    <div class="quick-feature-icon" style="background: #fffbeb; color: #f59e0b;">
+                        <i class="bi bi-basket2"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="quick-feature-title fw-bold">E-Pantry</h5>
+                        <p class="quick-feature-copy text-muted mb-4 fs-6">Order fresh meals and snacks delivered right to your seat onboard.</p>
+                    </div>
+                    <div class="quick-feature-link fw-semibold d-flex align-items-center gap-2 mt-auto" style="color: #f59e0b;">Explore meals <i class="bi bi-arrow-right"></i></div>
+                </a>
+            </div>
+            <div class="col-xl-6 col-md-6">
+                <a th:href="@{/user/cancellation-refunds}" class="quick-feature" style="--card-color: #ec4899;">
+                    <div class="quick-feature-icon" style="background: #fdf2f8; color: #ec4899;">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="quick-feature-title fw-bold">Cancellations & Refunds</h5>
+                        <p class="quick-feature-copy text-muted mb-4 fs-6">Track refund status and submit cancellation requests securely with ease.</p>
+                    </div>
+                    <div class="quick-feature-link fw-semibold d-flex align-items-center gap-2 mt-auto" style="color: #ec4899;">Open refunds <i class="bi bi-arrow-right"></i></div>
+                </a>
+            </div>
+            <div class="col-xl-6 col-md-6">
+                <a th:href="@{/user/profile}" class="quick-feature" style="--card-color: #8b5cf6;">
+                    <div class="quick-feature-icon" style="background: #f5f3ff; color: #8b5cf6;">
+                        <i class="bi bi-person-gear"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="quick-feature-title fw-bold">Account Settings</h5>
+                        <p class="quick-feature-copy text-muted mb-4 fs-6">Update personal details, change password, and manage your account preferences.</p>
+                    </div>
+                    <div class="quick-feature-link fw-semibold d-flex align-items-center gap-2 mt-auto" style="color: #8b5cf6;">Manage account <i class="bi bi-arrow-right"></i></div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Featured Meals -->
+        <div class="card p-2 border-0 shadow-sm animate-fade-up delay-3 mb-5" style="border-radius: 1.25rem;" th:if="${not #lists.isEmpty(featuredMeals)}">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 pb-0 px-4">
+                <h5 class="mb-0 fw-bold">Featured Meals</h5>
+                <a th:href="@{/user/meal-menu}" class="btn btn-sm btn-outline-primary shadow-sm" style="border-radius: 50px;">View Menu</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-xl-3 col-md-6" th:each="meal : ${featuredMeals}">
+                        <div class="bg-white border border-opacity-10 rounded-4 p-4 h-100 text-center position-relative transition-hover" style="border-width: 2px !important;">
+                            <span class="badge rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3 fw-bold"
+                                  th:classappend="${meal.mealType == 'VEG' ? 'bg-success bg-opacity-10 text-success' : (meal.mealType == 'NON_VEG' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-warning bg-opacity-10 text-warning')}"
+                                  th:text="${meal.mealType}">VEG</span>
+                            <div class="display-4 text-warning mb-3 mt-2"><i class="bi bi-cup-hot"></i></div>
+                            <h5 class="fw-bold mb-2 text-dark" th:text="${meal.mealName}">Meal Name</h5>
+                            <h6 class="text-primary fw-bold mb-3 fs-5" th:text="'Rs ' + ${#numbers.formatDecimal(meal.price, 0, 'COMMA', 2, 'POINT')}">Rs 0</h6>
+                            <p class="small text-muted mb-4 opacity-75" th:text="${meal.description}">Delicious meal description.</p>
+                            <button class="btn btn-primary w-100 shadow-sm" style="border-radius: 50px;" th:onclick="'orderMeal(' + ${meal.mealId} + ')'">Order Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="card p-2 border-0 shadow-sm animate-fade-up delay-4 mb-5" style="border-radius: 1.25rem;">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 pb-0 px-4">
+                <h5 class="mb-0 fw-bold">Recent Bookings</h5>
+                <a th:href="@{/user/my-bookings}" class="btn btn-sm btn-outline-primary shadow-sm" style="border-radius: 50px;">View All</a>
+            </div>
+            <div class="card-body p-4">
+                <div th:if="${#lists.isEmpty(recentBookings)}" class="text-muted text-center py-5 bg-light rounded-4">
+                    <i class="bi bi-journal-x display-4 opacity-25 d-block mb-3"></i>
+                    <h5 class="fw-bold text-dark">No recent bookings found</h5>
+                    <p class="small mb-0">When you book tickets, they will appear right here.</p>
+                    <a th:href="@{/user/view-trains}" class="btn btn-primary mt-3 px-4 shadow-sm" style="border-radius: 50px;">Book a Ticket</a>
+                </div>
                 <div th:unless="${#lists.isEmpty(recentBookings)}" class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0 border-0">
+                        <thead class="text-uppercase small fw-bold text-muted" style="background-color: #f8fafc;">
                         <tr>
-                            <th>Ticket</th>
-                            <th>Train</th>
-                            <th>Journey</th>
-                            <th>Status</th>
-                            <th>Refund</th>
-                            <th></th>
+                            <th class="py-3 px-4 border-0 rounded-start-3">Ticket ID</th>
+                            <th class="py-3 border-0">Train Detail</th>
+                            <th class="py-3 border-0">Journey Date</th>
+                            <th class="py-3 border-0">Status</th>
+                            <th class="py-3 border-0">Refund</th>
+                            <th class="py-3 px-4 text-end border-0 rounded-end-3">Actions</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        <tr th:each="ticket : ${recentBookings}">
-                            <td th:text="${ticket.ticketId}">TK1001</td>
-                            <td th:text="${ticket.train.trainName}">Rajdhani</td>
-                            <td th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">29 Mar 2026</td>
-                            <td th:text="${ticket.bookingStatus}">CONFIRMED</td>
-                            <td th:text="${ticket.refundStatus ?: 'NA'}">NA</td>
-                            <td class="d-flex gap-2">
-                                <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}" class="btn btn-sm btn-outline-primary">View</a>
-                                <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED' and ticket.bookingStatus == 'CONFIRMED'}"
-                                   th:href="@{/user/cancel-ticket/{id}(id=${ticket.ticketId})}"
-                                   class="btn btn-sm btn-outline-danger">Cancel</a>
+                        <tbody class="border-top-0">
+                        <tr th:each="ticket : ${recentBookings}" class="transition-hover" style="border-bottom: 1px solid rgba(0,0,0,0.03);">
+                            <td class="fw-bold text-primary py-4 px-4" th:text="${ticket.ticketId}">TK1001</td>
+                            <td class="py-4">
+                                <span class="d-block fw-bold text-dark fs-6" th:text="${ticket.train.trainName}">Rajdhani Expr</span>
+                                <span class="small text-muted"><i class="bi bi-geo-alt me-1"></i> <span th:text="${ticket.train.sourceStation}">SRC</span> <i class="bi bi-arrow-right mx-1"></i> <span th:text="${ticket.train.destinationStation}">DEST</span></span>
+                            </td>
+                            <td class="py-4">
+                                <span class="d-block fw-semibold" th:text="${#temporals.format(ticket.journeyDate, 'dd MMM yyyy')}">29 Mar 2026</span>
+                                <span class="small text-muted" th:text="${ticket.train.departureTime}">10:00 AM</span>
+                            </td>
+                            <td class="py-4">
+                                <span class="badge rounded-pill px-3 py-2 fw-semibold"
+                                      th:classappend="${ticket.bookingStatus == 'CONFIRMED' ? 'bg-success bg-opacity-10 text-success' : (ticket.bookingStatus == 'CANCELLED' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-warning bg-opacity-10 text-warning')}"
+                                      th:text="${ticket.bookingStatus}">CONFIRMED</span>
+                            </td>
+                            <td class="py-4">
+                                <span class="badge rounded-pill px-3 py-1 bg-light text-dark border" th:text="${ticket.refundStatus ?: 'N/A'}">NA</span>
+                            </td>
+                            <td class="py-4 px-4 text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a th:href="@{/user/ticket/{id}(id=${ticket.ticketId})}" class="btn btn-sm btn-light border shadow-sm text-primary" style="border-radius: 50px; padding: 0.35rem 1rem;">View</a>
+                                    <a th:if="${ticket.ticketStatus.name() == 'CONFIRMED' and ticket.bookingStatus == 'CONFIRMED'}"
+                                       th:href="@{/user/cancel-ticket/{id}(id=${ticket.ticketId})}"
+                                       class="btn btn-sm btn-outline-danger shadow-sm" style="border-radius: 50px; padding: 0.35rem 1rem;">Cancel</a>
+                                </div>
                             </td>
                         </tr>
                         </tbody>
